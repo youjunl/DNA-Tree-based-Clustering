@@ -24,4 +24,4 @@ if __name__ == '__main__':
          [5, 6],
          [7, 8, 9],
          [10]]
-    print(accuracy(est_c, c, 0.9))
+    print(accuracy(est_c, c, gamma = 0.9))
