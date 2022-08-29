@@ -1,3 +1,5 @@
+Adapted from https://github.com/JenEskimos/soft_edit_distance
+
 # Soft Edit Distance
 [Chainer](https://github.com/chainer/chainer/)-based Python implementation of Soft Edit Distance.
 
