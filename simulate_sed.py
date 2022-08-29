@@ -6,13 +6,13 @@ import numpy as np
 from distance import *
 from channel import *
 import torch
-num_x = 50
-pi = 0
-pd = 0
-ps = 0
+num_x = 400
+pi = 0.2
+pd = 0.2
+ps = 0.2
 alphabet = 'ATGC'
-sequences = ['ATATGCAATATGCA', 'CTACCAGCTACCAG',
-             'GACGAATGACGAAT', 'ACTGATCACTGATC']
+sequences = ['AAAATTTT', 'CCCCCCCC',
+             'GGGGGGGG', 'TTTTAAAA']
 # Repeat sequences n times
 tx_strands = sequences * num_x
 # Get output from IDS channel
@@ -30,6 +30,7 @@ def onehot(string, alphabet, max_len):
     return result
 
 def softEditDistance(X1: np.array, X2: np.array, tau):
+    #print(type(X2))
     s_len = X1.shape[0]
     t_len = X2.shape[0]
     alpha = np.zeros((s_len + 1, t_len + 1))
@@ -52,12 +53,15 @@ def softEditDistance(X1: np.array, X2: np.array, tau):
 
 # K-Means
 mini_batch = 50
-n_iter = 100
+n_iter = 10
 n_centroid = len(sequences)
 centroid_length = len(sequences[0])
-X = rx_strands
-L = np.array([len(seq) for seq in X])
+
+L = np.array([len(seq) for seq in rx_strands])
 max_len = np.max(L)
+alphaLen = len(alphabet)
+X = [onehot(sample, alphabet, max_len) for sample in rx_strands]
+
 tau = -4
 # Initialize k centroid points randomly
 random_indexes = np.where(L == centroid_length)[0]
@@ -66,28 +70,33 @@ random_indexes = random_indexes[np.random.choice(len(random_indexes), n_centroid
 init = []
 for i in random_indexes:
     init.append(X[i])
-centroid_str = np.unique(init)
+#init = np.unique(init)
+
 # Encoding with one-hot coding
 centroid = []
-for c in centroid_str:
-    centroid.append(onehot(c, alphabet, max_len))
-# Set cluster counts to 0
-counts = np.zeros((len(centroid), ))
+for c in init:
+    centroid.append(c)
+print('Center _______________________')
+for c in centroid:
+    seq = ''
+    for ind in np.argmax(c, axis=1):
+        seq += alphabet[ind]
+    print(seq)    
 
-grad = 0
 for i in range(n_iter):
     # Ramdomly pick M sample from X
     indexes = np.random.choice(len(X), mini_batch)
     x = []
     for index_i in indexes:
-        x.append(onehot(X[index_i], max_len))
+        x.append(X[index_i])
     # Compute the soft edit distance of a mini-batch x
     centroid_indexes = np.zeros((mini_batch,))
-    clusters = [[] for _ in range(len(counts))]
+    clusters = [[c] for c in centroid]
     min_sed = np.zeros((mini_batch,))
     for sample_index, sample in enumerate(x):
         sed = np.zeros(len(centroid))
         for centroid_index, c in enumerate(centroid):
+           
             sed[centroid_index] = softEditDistance(sample, c, tau)
         # Assign the sequence to the nearest centroid
         est_centroid_index = int(np.argmin(sed))
@@ -96,23 +105,34 @@ for i in range(n_iter):
         # Save the index of nearest centroid
         centroid_indexes[sample_index] = est_centroid_index
         # Save the samples in the cluster
-        clusters[est_centroid_index].append(x)
+        #print(clusters)
+        clusters[est_centroid_index].append(sample)
 
     # For each cluster, update the centroid
-    new_centroid = []
-    current_loss = 0
-    for sample_index, centroid_i in enumerate(centroid_indexes):
-        # Increment k-th cluster sample count
-        counts[centroid_i] = counts[centroid_i] + 1
-        # Get k-th cluster learning rate
-        leaning_rate = 1/counts[centroid_i]
-        # Update k-t controids      
-        optimized_c = c - leaning_rate*g*x
-        new_centroid.append(tmp)
-    # loss
-    current_loss = current_loss/mini_batch
-    if current_loss < last_loss:
-        centroid = new_centroid
-    print('Iter: %d, loss %f'%(i, current_loss))
+    for saved_centroid_index, cluster in enumerate(clusters):
+        mean_centroid = np.mean(cluster, axis=0)
+        #learning_rate = 1/len(cluster)
+        indexes = mean_centroid.argmax(axis=1)
+        mask = np.zeros((max_len, alphaLen))
+        for mask_ind in range(mask.shape[0]):
+            mask[mask_ind, indexes[mask_ind]] = 1
+        centroid[saved_centroid_index] = mask
+
+    # Calculate Loss for this iteration
+    Loss = 0
+    for sample_index, sample in enumerate(X):
+        sed = np.zeros(len(centroid))
+        for centroid_index, c in enumerate(centroid):
+            sed[centroid_index] = softEditDistance(sample, c, tau)
+        Loss += sed.min()
+    Loss /= len(X)
+    print('iter %d, Loss %2f'%(i, Loss))
+    # Print centrod
+    print('Center _______________________')
+    for c in centroid:
+        seq = ''
+        for ind in np.argmax(c, axis=1):
+            seq += alphabet[ind]
+        print(seq)    
 
 print(centroid)
