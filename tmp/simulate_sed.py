@@ -125,6 +125,7 @@ for i in range(n_iter):
         for centroid_index, c in enumerate(centroid):
             sed[centroid_index] = softEditDistance(sample, c, tau)
         Loss += sed.min()
+        
     Loss /= len(X)
     print('iter %d, Loss %2f'%(i, Loss))
     # Print centrod

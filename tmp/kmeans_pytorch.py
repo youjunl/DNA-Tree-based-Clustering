@@ -1,5 +1,6 @@
 # Adapted from https://github.com/DeMoriarty/fast_pytorch_kmeans/blob/master/fast_pytorch_kmeans/kmeans.py
 
+import imp
 import math
 import torch
 from time import time
@@ -7,29 +8,6 @@ import numpy as np
 
 
 class KMeans():
-    '''
-    Kmeans clustering algorithm implemented with PyTorch
-    Parameters:
-      n_clusters: int, 
-        Number of clusters
-      max_iter: int, default: 100
-        Maximum number of iterations
-      tol: float, default: 0.0001
-        Tolerance
-
-      verbose: int, default: 0
-        Verbosity
-      mode: {'euclidean', 'cosine'}, default: 'euclidean'
-        Type of distance measure
-      minibatch: {None, int}, default: None
-        Batch size of MinibatchKmeans algorithm
-        if None perform full KMeans algorithm
-
-    Attributes:
-      centroids: torch.Tensor, shape: [n_clusters, n_features]
-        cluster centroids
-    '''
-
     def __init__(self, n_clusters, max_iter=100, tol=0.0001, verbose=0, minibatch=None):
         self.n_clusters = n_clusters
         self.max_iter = max_iter
@@ -38,13 +16,6 @@ class KMeans():
         self.minibatch = minibatch
         self._loop = False
         self._show = False
-
-        try:
-            import PYNVML
-            self._pynvml_exist = True
-        except ModuleNotFoundError:
-            self._pynvml_exist = False
-
         self.centroids = None
 
     def sed(self, x, center, tau=-2):
@@ -91,13 +62,7 @@ class KMeans():
         """
         torch.cuda.synchronize()
         torch.cuda.empty_cache()
-        if self._pynvml_exist:
-            pynvml.nvmlInit()
-            gpu_handle = pynvml.nvmlDeviceGetHandleByIndex(0)
-            info = pynvml.nvmlDeviceGetMemoryInfo(gpu_handle)
-            remaining = info.free
-        else:
-            remaining = torch.cuda.memory_allocated()
+        remaining = torch.cuda.memory_allocated()
         return remaining
 
     def max_sim(self, a, b):
@@ -165,8 +130,10 @@ class KMeans():
             if self.minibatch is not None:
                 x = X[np.random.choice(
                     batch_size, size=[self.minibatch], replace=False)]
+                x = torch.Tensor(x)
             else:
                 x = X
+                x = torch.Tensor(x)
             closest = self.max_sim(a=x, b=self.centroids)[1]
             matched_clusters, counts = closest.unique(return_counts=True)
             c_grad = torch.zeros_like(self.centroids)
@@ -196,8 +163,6 @@ class KMeans():
                         c_grad[matched_clusters[i]] = tmp
 
             error = (c_grad - self.centroids).pow(2).sum()
-            print(c_grad)
-            print(self.centroids)
             if self.minibatch is not None:
                 lr = 1/num_points_in_clusters[:, None] * 0.9 + 0.1
                 # lr = 1/num_points_in_clusters[:,None]**0.1
