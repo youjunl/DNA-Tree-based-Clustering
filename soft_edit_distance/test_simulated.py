@@ -87,7 +87,7 @@ def vis(X, labels, centroids, alphabet, subsample_size=1000):
 
 if __name__ == '__main__':
     alphabet = np.array(['T', 'A', 'G', 'C'])
-    motifs = ['TAGCGA', 'ATGCAT', 'CCTTGA']
+    motifs = ['TAGCGACCC', 'ATATGGCAT', 'CCACCTTGA']
     seq_per_motif = 3000
     
     data = np.concatenate([generate_data(m, alphabet, seq_per_motif) for m in motifs], axis=0)
