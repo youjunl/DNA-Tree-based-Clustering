@@ -1,0 +1,82 @@
+import numpy as np
+data = []
+with open('./data.txt', 'r') as f:
+    for text in f.readlines():
+        text = text.strip()
+        data.append(text)
+
+print(data)
+class TreeNode:
+    def __init__(self, val):
+        self.alpha = ['A', 'T', 'G', 'C']
+        self.map = {'A':0, 'T':1, 'G':2, 'C':3}
+        self.freq = [0] * 4
+        self.val = val
+        self.next = []
+
+root = TreeNode('root')
+
+core = ['ATTT', 'CAGT']
+clusters = [[], []]
+
+# 建树
+def constructTree(head, inp, n):
+    if n == len(inp):
+        return
+    else:
+        base = inp[n]
+        if len(head.next) != 0:
+            for node in head.next:
+                if base == node.val:
+                    node.freq[node.map[base]] += 1
+                    constructTree(node, inp, n + 1)
+                    return
+
+        newNode = TreeNode(base)
+        newNode.freq[newNode.map[base]] += 1
+        head.next.append(newNode)
+        constructTree(head.next[-1], inp, n + 1)
+        return
+
+def traverseTree(head):
+    if len(head.next) == 0:
+        return [head.val]
+    else:
+        currentStack = [head]
+        outList = []
+        while len(currentStack):
+            res = []
+            nextStack = []
+            for node in currentStack:
+                if node.val != 'root':
+                    res.append(node.val + str(node.freq[node.map[node.val]]))
+                for nextNode in node.next:
+                    nextStack.append(nextNode)
+            outList.append(res)
+            currentStack = nextStack
+        return outList
+
+def computeMI(head, inp, n, v):
+    if len(head.next) == 0 or len(inp) == n:
+        return v    
+    MIs = []
+    base = inp[n]
+    for node in head.next:
+        temp_v = v * node.freq[node.map[base]]/sum(node.freq)
+        ans = computeMI(node, inp, n + 1, temp_v)
+        MIs.append(ans)
+    return MIs
+
+# 建树
+for inp in data:
+    constructTree(root, inp, 0)
+print(len(root.next))
+
+# 层序遍历树
+out = traverseTree(root)
+print(out)
+
+# 计算每个支路的互信息
+newInp = 'ATTC'
+MIs = computeMI(root, newInp, 0, 1)
+print(MIs)
