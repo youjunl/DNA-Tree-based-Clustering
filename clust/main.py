@@ -11,9 +11,9 @@ import time
 
 from tqdm import tqdm
 
-from cloverNew import align as ag
-from cloverNew import load_config as lc
-from cloverNew import tree as tr
+from clust import align as ag
+from clust import load_config as lc
+from clust import tree as tr
 
 class MyProcess(Process):
     """Process Class

@@ -10,9 +10,9 @@ import sys
 
 config_dict={
     "read_len" : 152,
-    "end_tree_len" : 15,
+    "end_tree_len" : 15, 
     "other_tree_len" : 15,
-    "other_tree_nums" : 0,
+    "other_tree_nums" : 2,
     "thd_tree_loc" : 40,
     "four_tree_loc" : 40,
     "Vertical_drift" : 2,
@@ -24,7 +24,7 @@ config_dict={
     "Cluster_size_threshold" : 1,
     "h_index_nums" : 0,
     "e_index_nums" : 0,
-    "read_len_min" : 16,
+    "read_len_min" : 0,
 
     "align_fuc" : False ,
     "mmr_mode" : False ,
@@ -107,7 +107,6 @@ def out_put_config():
     if type(config_dict['Vertical_drift']) == int :
         config_dict['Vertical_drift'] = generate_vertical_drifts_list(config_dict['Horizontal_drift']) 
     config_dict['tag']="""
-    A Modified Version of
       ___           ___       ___           ___           ___           ___     
      /\  \         /\__\     /\  \         /\__\         /\  \         /\  \    
     /::\  \       /:/  /    /::\  \       /:/  /        /::\  \       /::\  \   

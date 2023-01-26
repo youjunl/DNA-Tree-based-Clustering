@@ -25,7 +25,7 @@ class Trie:
         self.node_nums = len(self.dna_dict)
         self.children = [None] * self.node_nums
         self.isEnd = False
-        self.maxOptimDepth = 3
+
     #Node retrieval function without drift.
     def searchPrefix(self, prefix: str) -> "Trie":
         dict=self.dna_dict
@@ -71,7 +71,7 @@ class Trie:
             node = node.children[ch]
         node.isEnd = False
 
-    def fuzz_align(self, word):
+    def fuzz_align(self,word):
         """Horizontal drift function
 
         Args:
@@ -85,13 +85,10 @@ class Trie:
         node = self 
         dict = self.dna_dict
         num=0
-        tmp_list=[]
-        sub_list=[]
-        ins_list=[]
-        del_list=[]
+        list=[]
+        fin_list=[]
         len_=len(word)
-
-        for pos, ch in enumerate(word) :
+        for ch in word :
 
             ch = dict[ch]
             if not node.children[ch]:
@@ -100,50 +97,28 @@ class Trie:
                     if not node.children[i]:
                         pass
                     else:
-                        tmp_list.append(i)
-                
-                maxOptimDepth = self.maxOptimDepth
-                traverseNum = min(len_-num-1, maxOptimDepth)
+                        list.append(i)
                 #print(word,ch,list,num)
-                for k in tmp_list:
-                    #Deletion
-                    depth = 0
-                    tmp = node.children[k]
-                    while depth < traverseNum:
-                        if not tmp.children[dict[word[num+depth]]]:
-                            break
-                        tmp = tmp.children[dict[word[num+depth]]]
-                        depth += 1
-
-                    if depth == traverseNum:
-                        del_list.append(k)
-
-                    #Insertion
-                    depth = 0
-                    tmp = node
-                    while depth < traverseNum-1:
-                        if not tmp.children[dict[word[num+depth+1]]]:
-                            break
-                        tmp = tmp.children[dict[word[num+depth+1]]]
-                        depth += 1
-
-                    if depth == traverseNum-1:
-                        ins_list.append(k)                     
-
-                    #Substitution
-                    depth = 0
-                    tmp = node.children[k]
-                    while depth < traverseNum:                                                
-                        if not tmp.children[dict[word[num+depth+1]]]:
-                            break
-                        tmp = tmp.children[dict[word[num+depth+1]]]
-                        depth += 1
-
-                    if depth == traverseNum:
-                        sub_list.append(k)
-
-                return [num, sub_list, ins_list, del_list]
-
+                if num +2 < len_ :
+                    for k in list :
+                        if not node.children[k].children[dict[word[num+1]]]:
+                            pass
+                        elif not node.children[k].children[dict[word[num+1]]].children[dict[word[num+2]]]:
+                            pass
+                        else:
+                            fin_list.append(k)
+                    return [num,fin_list]
+                if num +2 == len_:
+                    for k in list :
+                        if not node.children[k].children[dict[word[num+1]]]:
+                            pass
+                        else:
+                            fin_list.append(k)
+                    return [num,fin_list]
+                if num +1 == len_:
+                    for k in list :
+                        fin_list.append(k)
+                        return [num,fin_list]
             else:
                 node = node.children[ch]
             num = num + 1
@@ -162,52 +137,39 @@ class Trie:
             core sequence, and the second element is the number of horizontal drifts.
         """
 
-        tmp_list=[[word,0]]
+        list=[[word,0]]
         
         fin_list=["",1000]
-        num2dnaDict = {0: 'A', 1: 'T', 2: 'G', 3: 'C'}
+        dict2  = {}
+        for key in self.dna_dict:
+            dict2[self.dna_dict[key]] = key
         error_list=[]
         while True :
-            if tmp_list == [] or fin_list[1] == 0 :
+            if list == [] or fin_list[1] == 0 :
 
                 break
-            dna = tmp_list[0]
+            dna = list[0]
             
             if dna[1] > max_value :
                 break
-            del tmp_list[0]
-            result = self.fuzz_align(dna[0])
-            error_list.append([dna, result])
-            if type(result) == int :
+            del list[0]
+            a = self.fuzz_align(dna[0])
+            error_list.append([dna,a])
+            if type(a) == int :
                 if dna[1] < fin_list[1] :
-                    fin_list=[result, dna[1]]
-            # elif self.fuzz_align(word)[1] == [] :
-            #     break
-            # elif result is False:
-                # break # To Do...
-            elif result[0] == len(dna[0])-1:
-                for i in range(len(result[1])):
-                    chNum = result[1][i]
-                    k = dna[0][:result[0]]+num2dnaDict[chNum]
-                    tmp_list.append([k,dna[1]+1])
+                    fin_list=[a,dna[1]]
+            elif self.fuzz_align(word)[1] == [] :
+                break
+            elif a[0] == len(dna[0])-1:
+                for i in range(len(a[1])):
+                    i=a[1][i]
+                    k = dna[0][:a[0]]+dict2[i]
+                    list.append([k,dna[1]+1])                
             else:
-                for i in range(len(result[1])):
-                    chNum = result[1][i]
-                    k = dna[0][:result[0]]+num2dnaDict[chNum]+dna[0][result[0]-len(dna[0])+1:]
-                    tmp_list.append([k,dna[1]+1])
-
-                # Insertion Fix
-                for i in range(len(result[2])):
-                    k = dna[0][:result[0]]+dna[0][result[0]-len(dna[0])+1:] + 'A'
-                    tmp_list.append([k,dna[1]+1])
-
-                # Deletion Fix
-                for i in range(len(result[3])):
-                    chNum = result[3][i]
-                    k = dna[0][:result[0]]+num2dnaDict[chNum]+dna[0][result[0]-len(dna[0]):]
-                    k = k[:16]
-                    tmp_list.append([k,dna[1]+1])
-
+                for i in range(len(a[1])):
+                    i=a[1][i]
+                    k = dna[0][:a[0]]+dict2[i]+dna[0][a[0]-len(dna[0])+1:]
+                    list.append([k,dna[1]+1])
         fin_list.append(error_list)
         return fin_list[:2]
     

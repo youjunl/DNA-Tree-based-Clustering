@@ -1,0 +1,5 @@
+__pycache__
+clust/__pycache__
+clover/__pycache__
+testdata/
+*.txt

@@ -11,9 +11,9 @@ import time
 
 from tqdm import tqdm
 
-from cloverNew import align as ag
-from cloverNew import load_config as lc
-from cloverNew import tree as tr
+from clover import align as ag
+from clover import load_config as lc
+from clover import tree as tr
 
 class MyProcess(Process):
     """Process Class
@@ -170,11 +170,11 @@ class MyProcess(Process):
         else:
             dna_b_str = dna_str[-self.e_index-self.dna_tree_nums:-self.e_index]
         dna_str_num=len(dna_str)
-        if "N" in dna_str:#dna_str_num < self.config_dict['read_len_min'] or "N" in dna_str:
+        if dna_str_num < self.config_dict['read_len_min'] or "N" in dna_str:
             pass 
         else:
             a_align = self.a_tree.fuzz_fin(dna_a_str,self.config_dict['tree_threshold']) 
-
+            
             if a_align[1]<self.fuzz_tree_nums:  #If the match is successful, it is recorded.
                 if self.config_dict['Virtual_mode'] == False:
                     
@@ -256,7 +256,7 @@ class MyProcess(Process):
                             self.ref_error_dict[align_list[0]]={}
                             self.ref_error_dict[align_list[0]]["nums"]=1
                             self.ref_error_dict[align_list[0]][line[0]]=1
-            
+                
             else:
                 #If the trees at the first and last ends cannot be matched, try the middle tree.
                 if dna_str_num >= self.config_dict['read_len_min'] :
@@ -317,16 +317,23 @@ class MyProcess(Process):
                                     self.ref_error_dict[align_list[0]]["nums"]=1
                                     self.ref_error_dict[align_list[0]][line[0]]=1
 
-                    if fin_align[1] >= self.now_clust_threshold : #Add to core sequence set if conditions are met.
-                        if self.config_dict['align_fuc'] == True:
-                            self.ref_list[dna_num]=dna_str
-                        self.ref_dict[dna_num]=[dna_tag]
-                        self.a_tree.insert(dna_a_str,dna_num)
-                        self.b_tree.insert(dna_b_str,dna_num)
-                        self.index_list.append((dna_index,self.ref_dict[dna_num))
-                        #self.c_tree.insert(dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i],dna_num)
-                        if self.config_dict['other_tree_nums'] == 2 :
-                            self.d_tree.insert(dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i],dna_num)
+                          
+                    # if fin_align[1] >= self.now_clust_threshold : #Add to core sequence set if conditions are met.
+                    #     if self.config_dict['align_fuc'] == True:
+                    #         self.ref_list[dna_num]=dna_str
+                    #     self.ref_dict[dna_num]=[dna_tag]
+                    #     self.a_tree.insert(dna_a_str,dna_num)
+                    #     self.b_tree.insert(dna_b_str,dna_num)
+                    #     self.c_tree.insert(dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i],dna_num)
+                    #     self.d_tree.insert(dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i],dna_num)
+
+                    if self.config_dict['align_fuc'] == True:
+                        self.ref_list[dna_num]=dna_str
+                    self.ref_dict[dna_num]=[dna_tag]
+                    self.a_tree.insert(dna_a_str,dna_num)
+                    self.b_tree.insert(dna_b_str,dna_num)
+                    self.c_tree.insert(dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i],dna_num)
+                    self.d_tree.insert(dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i],dna_num)
 
     #Process flow
     def run(self):
@@ -336,7 +343,7 @@ class MyProcess(Process):
         self.num_dict[self.name+"sum_cluster_num"]=0
         self.num_dict[self.name+"sum_tag"]=[]
         len_=len(self.name) 
-    
+        
         if self.config_dict['fast_mode'] == True :
             
             for line in tqdm(self.data):
@@ -468,7 +475,6 @@ class MyProcess(Process):
                 nums_line = 0
                 while True :
                     line = f.readline()
-
                     if line == [] or line == "" :
                         break
                     if self.file_format ==  "txt" :
@@ -620,7 +626,6 @@ if __name__ == '__main__':
             output_file.write(result[0] + ',' + result[1] + '\n')
         #output_file.write(str(new_count_dict["index_list"]))
         output_file.close()
-
     if config_dict['Virtual_mode'] == True :
         #print("Number of reads processed:",new_count_dict["sum_read_num"],new_count_dict["error_num"],new_count_dict["sum_cluster_num"])
         print("Number of reads processed:",new_count_dict["sum_read_num"])
