@@ -181,8 +181,8 @@ class Trie:
             if type(result) == int :
                 if dna[1] < fin_list[1] :
                     fin_list=[result, dna[1]]
-            # elif self.fuzz_align(word)[1] == [] :
-            #     break
+            elif self.fuzz_align(word)[1] == [] :
+                break
             elif result is False:
                 break # To Do...
             elif result[0] == len(dna[0])-1:

@@ -1,32 +1,56 @@
 import os
 import matplotlib.pyplot as plt
 from collections import defaultdict
+from tqdm import tqdm
 import getopt, sys
 
 args = ['origin', 'f1', 'f2']
 
 def compute(fileIn, clustNum, gamma):
-    hashmap = defaultdict(int)
-    falsehashmap = defaultdict(int)
-    acc = [0] * len(gamma)
+    nClust = len(clustNum.keys())
+
+    # Read result
+    results = []
     with open(fileIn, 'r') as f:
-        for text in f.readlines():
+        for text in tqdm(f.readlines()):
             text = text.strip()
             content = text.split(',')
-            origin = content[0]         
-            new = content[1]
-            if new == origin:
-                hashmap[new] += 1      
-            else:
-                falsehashmap[new] += 1
-        f.close()
-           
-    for i in range(len(gamma)):
+            tag = int(content[0])         
+            cluster = int(content[1])
+            results.append((tag, cluster))
+    results = sorted(results, key=lambda k: k[1])
+
+    maxClustNum = results[-1][1] if len(results) > 0 else 0
+    clusters = [[] for _ in range(maxClustNum)]
+    for i in range(len(results)):
+        clusters[results[i][1]-1].append(results[i][0])
+
+    clusters = [c for c in clusters if c != []]
+    
+    score = [0] * max(clustNum.keys())
+    for cluster in tqdm(clusters):
+        tagRef = cluster[0]
+        # check identity of tags
+        valid = True
+        for tag in cluster:
+            if tag != tagRef:
+                valid = False
+                break
+        if valid is False:
+            continue
+        
+        score[tagRef-1] = max(score[tagRef-1], len(cluster))
+
+    # Compute accuracy
+    gamma = [i*0.02 for i in range(20, 51)]
+    acc = [0] * len(gamma)
+    
+    for i, g in enumerate(gamma):
         cnt = 0
-        for c in hashmap:
-            if hashmap[c] >= gamma[i]*clustNum[c] and falsehashmap[c] == 0:
+        for tag in clustNum.keys():
+            if score[tag-1] / clustNum[tag] >= g:
                 cnt += 1
-        acc[i] = cnt / len(clustNum)   
+        acc[i] = cnt / nClust
     return gamma, acc
 
 if __name__ == '__main__':
@@ -43,10 +67,11 @@ if __name__ == '__main__':
     gamma = [i*0.02 for i in range(20, 51)]
     acc = [0] * len(gamma)
     clustNum = defaultdict(int)
-    
+
+    print('Building references')
     with open(originFile, 'r') as f:
-        for text in f.readlines():
-            origin = text.split(' ')[0]
+        for text in tqdm(f.readlines()):
+            origin = int(text.split(' ')[0])
             clustNum[origin] += 1
 
     gamma, acc = compute(outputfile1, clustNum, gamma)

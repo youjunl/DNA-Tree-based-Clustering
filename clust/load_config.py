@@ -10,13 +10,13 @@ import sys
 
 config_dict={
     "read_len" : 152,
-    "end_tree_len" : 16,
+    "end_tree_len" : 21,
     "other_tree_len" : 15,
     "other_tree_nums" : 0,
     "thd_tree_loc" : 40,
     "four_tree_loc" : 40,
     "Vertical_drift" : 2,
-    "Horizontal_drift" : 3,
+    "Horizontal_drift" : 3, # Error threshold
     "tree_threshold" : 10,
     "now_clust_threshold" : 8,
     "tag_nums" : 1,

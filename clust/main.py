@@ -165,11 +165,13 @@ class MyProcess(Process):
             dna_a_str = dna_str[:self.dna_tree_nums]
         else:
             dna_a_str = dna_str[self.h_index:self.h_index+self.dna_tree_nums]
-        if self.e_index == 0 : 
-            dna_b_str = dna_str[-self.dna_tree_nums:]
-        else:
-            dna_b_str = dna_str[-self.e_index-self.dna_tree_nums:-self.e_index]
-        dna_str_num=len(dna_str)
+        # if self.e_index == 0 : 
+        #     # dna_b_str = dna_str[-self.dna_tree_nums:]
+        #     dna_b_str = dna_a_str
+        # else:
+        #     # dna_b_str = dna_str[-self.e_index-self.dna_tree_nums:-self.e_index]
+        #     dna_b_str = dna_a_str
+        # dna_str_num=len(dna_str)
         if "N" in dna_str:#dna_str_num < self.config_dict['read_len_min'] or "N" in dna_str:
             pass 
         else:
@@ -216,117 +218,123 @@ class MyProcess(Process):
                             self.ref_error_dict[align_list[0]]["nums"]=1
                             self.ref_error_dict[align_list[0]][line[0]]=1
                         
-            elif self.b_tree.fuzz_fin(dna_b_str,self.config_dict['tree_threshold'])[1] < self.fuzz_tree_nums:
-                b_align=self.b_tree.fuzz_fin(dna_b_str,self.config_dict['tree_threshold'])
+            # elif self.b_tree.fuzz_fin(dna_b_str,self.config_dict['tree_threshold'])[1] < self.fuzz_tree_nums:
+            #     b_align=self.b_tree.fuzz_fin(dna_b_str,self.config_dict['tree_threshold'])
                 
-                if self.config_dict['Virtual_mode'] == False:
-                    self.index_list.append((dna_index,self.ref_dict[b_align[0]][0]))
-                else:
-                    self.ref_dict[b_align[0]].append(dna_tag)
+            #     if self.config_dict['Virtual_mode'] == False:
+            #         self.index_list.append((dna_index,self.ref_dict[b_align[0]][0]))
+            #     else:
+            #         self.ref_dict[b_align[0]].append(dna_tag)
 
-                if self.align_swicth is True:
-                    error_list = []
-                    align_list=b_align
-                    if self.config_dict["now_align_alg"] == True:
-                        error_list=ag.global_align(self.ref_list[align_list[0]],dna_str)
-                    else:
-                        if dna_str_num==self.read_len :
-                            if self.ref_list[align_list[0]] == dna_str:
-                                pass
-                            else:
-                                error_list=ag.global_align(self.ref_list[align_list[0]],dna_str)
+            #     if self.align_swicth is True:
+            #         error_list = []
+            #         align_list=b_align
+            #         if self.config_dict["now_align_alg"] == True:
+            #             error_list=ag.global_align(self.ref_list[align_list[0]],dna_str)
+            #         else:
+            #             if dna_str_num==self.read_len :
+            #                 if self.ref_list[align_list[0]] == dna_str:
+            #                     pass
+            #                 else:
+            #                     error_list=ag.global_align(self.ref_list[align_list[0]],dna_str)
                         
-                    for line in error_list:
-                        if align_list[0] in self.ref_error_dict : 
-                            self.ref_error_dict[align_list[0]]["nums"]=self.ref_error_dict[align_list[0]]["nums"] + 1
-                            if line[0] in  self.ref_error_dict[align_list[0]]:
-                                self.ref_error_dict[align_list[0]][line[0]]=self.ref_error_dict[align_list[0]][line[0]]+1
-                            else:
-                                self.ref_error_dict[align_list[0]][line[0]]=1
-                            if self.ref_error_dict[align_list[0]][line[0]]/self.ref_error_dict[align_list[0]]["nums"] >0.5 and self.ref_error_dict[a_align[0]][line[0]]>5 :
-                                now_read=self.ref_list[align_list[0]][:line[0]]+line[1]+self.ref_list[align_list[0]][line[0]+1:]
+            #         for line in error_list:
+            #             if align_list[0] in self.ref_error_dict : 
+            #                 self.ref_error_dict[align_list[0]]["nums"]=self.ref_error_dict[align_list[0]]["nums"] + 1
+            #                 if line[0] in  self.ref_error_dict[align_list[0]]:
+            #                     self.ref_error_dict[align_list[0]][line[0]]=self.ref_error_dict[align_list[0]][line[0]]+1
+            #                 else:
+            #                     self.ref_error_dict[align_list[0]][line[0]]=1
+            #                 if self.ref_error_dict[align_list[0]][line[0]]/self.ref_error_dict[align_list[0]]["nums"] >0.5 and self.ref_error_dict[a_align[0]][line[0]]>5 :
+            #                     now_read=self.ref_list[align_list[0]][:line[0]]+line[1]+self.ref_list[align_list[0]][line[0]+1:]
 
-                                self.a_tree.insert(now_read[:self.dna_tree_nums],align_list[0])
-                                self.ref_list[align_list[0]]=now_read
+            #                     self.a_tree.insert(now_read[:self.dna_tree_nums],align_list[0])
+            #                     self.ref_list[align_list[0]]=now_read
 
-                                self.ref_error_dict[align_list[0]]={}
-                                self.ref_error_dict[align_list[0]]["nums"]=1
-                                self.ref_error_dict[align_list[0]][line[0]]=1                                   
-                        else:
-                            self.ref_error_dict[align_list[0]]={}
-                            self.ref_error_dict[align_list[0]]["nums"]=1
-                            self.ref_error_dict[align_list[0]][line[0]]=1
+            #                     self.ref_error_dict[align_list[0]]={}
+            #                     self.ref_error_dict[align_list[0]]["nums"]=1
+            #                     self.ref_error_dict[align_list[0]][line[0]]=1                                   
+            #             else:
+            #                 self.ref_error_dict[align_list[0]]={}
+            #                 self.ref_error_dict[align_list[0]]["nums"]=1
+            #                 self.ref_error_dict[align_list[0]][line[0]]=1
             
             else:
+                if self.config_dict['align_fuc'] == True:
+                    self.ref_list[dna_num]=dna_str
+                self.ref_dict[dna_num]=[dna_tag]
+                self.a_tree.insert(dna_a_str,dna_num)
+                #self.b_tree.insert(dna_b_str,dna_num)
+                self.index_list.append((dna_index,self.ref_dict[dna_num][0]))
                 #If the trees at the first and last ends cannot be matched, try the middle tree.
-                if dna_str_num >= self.config_dict['read_len_min'] :
-                    fin_align=["",1000]
-                    for i in self.loc_nums:
-                        if self.h_index == 0 :
-                            dna_c_str=dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i]
-                        else:
-                            dna_c_str=dna_str[self.h_index+self.fuzz_list[0]-i:self.h_index+self.fuzz_list[0]+self.fuzz_list[2]-i]
-                        c_align = self.c_tree.fuzz_fin(dna_c_str,self.config_dict['tree_threshold']) 
-                        if c_align[1]<fin_align[1] :
-                                fin_align=c_align
-                        if self.config_dict['other_tree_nums'] == 2 :
-                            if self.e_index == 0 :
-                                dna_d_str=dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i]
-                            else:
-                                dna_d_str=dna_str[self.read_len-2-self.fuzz_list[1]-i-self.e_index:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i-self.e_index]
-                            d_align = self.d_tree.fuzz_fin(dna_d_str,self.config_dict['tree_threshold'])
-                            if d_align[1]<fin_align[1] :
-                                fin_align=d_align
+                # if dna_str_num >= self.config_dict['read_len_min'] :
+                #     fin_align=["",1000]
+                #     for i in self.loc_nums:
+                #         if self.h_index == 0 :
+                #             dna_c_str=dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i]
+                #         else:
+                #             dna_c_str=dna_str[self.h_index+self.fuzz_list[0]-i:self.h_index+self.fuzz_list[0]+self.fuzz_list[2]-i]
+                #         c_align = self.c_tree.fuzz_fin(dna_c_str,self.config_dict['tree_threshold']) 
+                #         if c_align[1]<fin_align[1] :
+                #                 fin_align=c_align
+                #         if self.config_dict['other_tree_nums'] == 2 :
+                #             if self.e_index == 0 :
+                #                 dna_d_str=dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i]
+                #             else:
+                #                 dna_d_str=dna_str[self.read_len-2-self.fuzz_list[1]-i-self.e_index:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i-self.e_index]
+                #             d_align = self.d_tree.fuzz_fin(dna_d_str,self.config_dict['tree_threshold'])
+                #             if d_align[1]<fin_align[1] :
+                #                 fin_align=d_align
 
-                    if fin_align[1] < self.fuzz_tree_nums :
-                        if self.config_dict['Virtual_mode'] == False:
-                            self.index_list.append((dna_index,self.ref_dict[fin_align[0]][0]))
-                        else:
-                            self.ref_dict[fin_align[0]].append(dna_tag)
+                #     if fin_align[1] < self.fuzz_tree_nums :
+                #         if self.config_dict['Virtual_mode'] == False:
+                #             self.index_list.append((dna_index,self.ref_dict[fin_align[0]][0]))
+                #         else:
+                #             self.ref_dict[fin_align[0]].append(dna_tag)
                         
-                        if self.align_swicth is True:
-                            error_list = []
-                            align_list=fin_align
-                            if self.config_dict["now_align_alg"] == True:
-                                error_list=ag.global_align(self.ref_list[align_list[0]],dna_str)
-                            else:
-                                if dna_str_num==self.read_len :
-                                    if self.ref_list[align_list[0]] == dna_str:
-                                        pass
-                                    else:
-                                        error_list=ag.global_align(self.ref_list[align_list[0]],dna_str)
+                #         if self.align_swicth is True:
+                #             error_list = []
+                #             align_list=fin_align
+                #             if self.config_dict["now_align_alg"] == True:
+                #                 error_list=ag.global_align(self.ref_list[align_list[0]],dna_str)
+                #             else:
+                #                 if dna_str_num==self.read_len :
+                #                     if self.ref_list[align_list[0]] == dna_str:
+                #                         pass
+                #                     else:
+                #                         error_list=ag.global_align(self.ref_list[align_list[0]],dna_str)
                                 
-                            for line in error_list:
-                                if align_list[0] in self.ref_error_dict : 
-                                    self.ref_error_dict[align_list[0]]["nums"]=self.ref_error_dict[align_list[0]]["nums"] + 1
-                                    if line[0] in  self.ref_error_dict[align_list[0]]:
-                                        self.ref_error_dict[align_list[0]][line[0]]=self.ref_error_dict[align_list[0]][line[0]]+1
-                                    else:
-                                        self.ref_error_dict[align_list[0]][line[0]]=1
-                                    if self.ref_error_dict[align_list[0]][line[0]]/self.ref_error_dict[align_list[0]]["nums"] >0.5 and self.ref_error_dict[a_align[0]][line[0]]>5 :
-                                        now_read=self.ref_list[align_list[0]][:line[0]]+line[1]+self.ref_list[align_list[0]][line[0]+1:]
+                #             for line in error_list:
+                #                 if align_list[0] in self.ref_error_dict : 
+                #                     self.ref_error_dict[align_list[0]]["nums"]=self.ref_error_dict[align_list[0]]["nums"] + 1
+                #                     if line[0] in  self.ref_error_dict[align_list[0]]:
+                #                         self.ref_error_dict[align_list[0]][line[0]]=self.ref_error_dict[align_list[0]][line[0]]+1
+                #                     else:
+                #                         self.ref_error_dict[align_list[0]][line[0]]=1
+                #                     if self.ref_error_dict[align_list[0]][line[0]]/self.ref_error_dict[align_list[0]]["nums"] >0.5 and self.ref_error_dict[a_align[0]][line[0]]>5 :
+                #                         now_read=self.ref_list[align_list[0]][:line[0]]+line[1]+self.ref_list[align_list[0]][line[0]+1:]
 
-                                        self.a_tree.insert(now_read[:self.dna_tree_nums],align_list[0])
-                                        self.ref_list[align_list[0]]=now_read
+                #                         self.a_tree.insert(now_read[:self.dna_tree_nums],align_list[0])
+                #                         self.ref_list[align_list[0]]=now_read
 
-                                        self.ref_error_dict[align_list[0]]={}
-                                        self.ref_error_dict[align_list[0]]["nums"]=1
-                                        self.ref_error_dict[align_list[0]][line[0]]=1                                   
-                                else:
-                                    self.ref_error_dict[align_list[0]]={}
-                                    self.ref_error_dict[align_list[0]]["nums"]=1
-                                    self.ref_error_dict[align_list[0]][line[0]]=1
+                #                         self.ref_error_dict[align_list[0]]={}
+                #                         self.ref_error_dict[align_list[0]]["nums"]=1
+                #                         self.ref_error_dict[align_list[0]][line[0]]=1                                   
+                #                 else:
+                #                     self.ref_error_dict[align_list[0]]={}
+                #                     self.ref_error_dict[align_list[0]]["nums"]=1
+                #                     self.ref_error_dict[align_list[0]][line[0]]=1
 
-                    if fin_align[1] >= self.now_clust_threshold : #Add to core sequence set if conditions are met.
-                        if self.config_dict['align_fuc'] == True:
-                            self.ref_list[dna_num]=dna_str
-                        self.ref_dict[dna_num]=[dna_tag]
-                        self.a_tree.insert(dna_a_str,dna_num)
-                        self.b_tree.insert(dna_b_str,dna_num)
-                        self.index_list.append((dna_index,self.ref_dict[dna_num][0]))
-                        #self.c_tree.insert(dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i],dna_num)
-                        if self.config_dict['other_tree_nums'] == 2 :
-                            self.d_tree.insert(dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i],dna_num)
+                #     if fin_align[1] >= self.now_clust_threshold : #Add to core sequence set if conditions are met.
+                #         if self.config_dict['align_fuc'] == True:
+                #             self.ref_list[dna_num]=dna_str
+                #         self.ref_dict[dna_num]=[dna_tag]
+                #         self.a_tree.insert(dna_a_str,dna_num)
+                #         self.b_tree.insert(dna_b_str,dna_num)
+                #         self.index_list.append((dna_index,self.ref_dict[dna_num][0]))
+                #         #self.c_tree.insert(dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i],dna_num)
+                #         if self.config_dict['other_tree_nums'] == 2 :
+                #             self.d_tree.insert(dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i],dna_num)
 
     #Process flow
     def run(self):
