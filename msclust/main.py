@@ -1,13 +1,21 @@
 import core
-from tqdm import tqdm
+import getopt, sys
 
 if __name__ == '__main__':
-    infile = 'testdata/toClustMid.txt'
+    opts, args = getopt.getopt(sys.argv[1:], '', '')
+
+    if len(args) != 2:
+        print('Wrong command')
+        sys.exit(2)
+
+    infile = args[0]
+    outfile = args[1]
+
     inData = []
     cnt = 0
     f = open(infile, 'r').readlines()
     clustNum = {}
-    for text in tqdm(f):
+    for text in f:
         text = text.split()
         if 'N' not in text[1]:
             tag = int(text[0])
@@ -27,7 +35,7 @@ if __name__ == '__main__':
 
     # Sort ans
     ans = sorted(ans, key=lambda k: (k[0].tag, k[0].cluster))
-    with open('output_test.txt', 'w') as f:
+    with open(outfile, 'w') as f:
         f.truncate(0)
         for clust in ans:
             for seq in clust:

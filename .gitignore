@@ -3,3 +3,5 @@ clover/__pycache__
 msclust/__pycache__
 testdata/
 *.txt
+.vscode
+*.gv

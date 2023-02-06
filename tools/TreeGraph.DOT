@@ -1,0 +1,29 @@
+
+// Example tree
+/*
+CATGC
+CACAT
+CATGA
+*/
+graph ""
+{
+node [margin=0 fontcolor=black fontsize=44 width=0.3 shape=circle style=filled]
+   n002 ;
+   n002 [label="C"] [color=darkolivegreen1];
+   n002 -- n003 [color=green, penwidth=3.0];
+   n003 [label="A"] [color=darkolivegreen1];
+   n003 -- n004 [color=green, penwidth=3.0];
+   n004 [label="T"] [color=brown1] ;
+   n003 -- n005 ;
+   n005 [label="C"] ;
+   n004 -- n006 [color=green, penwidth=3.0];
+   n006 [label="G"] [color=darkolivegreen1];
+   n006 -- n007 [color=green, penwidth=3.0];
+   n007 [label="A"] [color=darkolivegreen1];
+   n006 -- n008 [color=red, penwidth=3.0];
+   n008 [label="C"] [color=brown1];
+   n005 -- n009 ;
+   n009 [label="A"] ;
+   n009 -- n010 ;
+   n010 [label="T"] ;
+}

@@ -1,5 +1,4 @@
 import random
-from tqdm import tqdm
 from multiprocessing.dummy import Pool as ThreadPool
 dna_alphabet = {0: 'A', 1: 'T', 2: 'G', 3: 'C'}
 ind_alphabet = {'A': 0, 'T': 1, 'G': 2, 'C': 3}
@@ -90,15 +89,13 @@ def compute_comm(inData):
         seq.iv = computeIndicator(seq.data, blockLen, params['q'])
         S.append([seq])
 
-    with ThreadPool() as pool:
-        pool.map(preprocess, inData)
-        pool.close()
-        pool.join()
+    for seq in inData:
+        preprocess(seq)
         
     core = params['core_num']
     hashLen = params['w'] + params['l']
     print('Clustering')
-    for _ in tqdm(range(params['comm_step'])):
+    for _ in range(params['comm_step']):
         #print('comm step %d'%i)
         # initialize a random anchor
         #anchor = random_anchor(params['w'])
@@ -106,10 +103,10 @@ def compute_comm(inData):
         C = [[] for _ in range(core)]
         for cluster in S:
             C[random.randint(0, core-1)].append(cluster)
-        with ThreadPool(params['core_num']) as pool:
-            pool.map(compute_local, C)
-            pool.close()
-            pool.join()
+        
+        for i in range(core):
+            compute_local(C[i])
+
         S = []
         for i in range(core):
             S.extend(C[i])
@@ -176,7 +173,6 @@ def compute_local(Clusters):
                     # compare edit distance
                     if editDistance(str1, str2, len(str1), len(str2)) < params['r']:
                         #  merge
-                        
                         for t in range(len(Clusters[merge_map[ind2]])):
                             Clusters[merge_map[ind2]][t].cluster = ind1
                         Clusters[merge_map[ind1]].extend(Clusters[merge_map[ind2]])
@@ -189,4 +185,3 @@ def compute_local(Clusters):
                     Clusters[merge_map[ind1]].extend(Clusters[merge_map[ind2]])
                     Clusters[merge_map[ind2]].clear()
     Clusters = [c for c in Clusters if c != []]
-        
