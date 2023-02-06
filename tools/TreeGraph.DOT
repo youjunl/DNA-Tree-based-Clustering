@@ -1,29 +1,55 @@
-
 // Example tree
 /*
 CATGC
 CACAT
 CATGA
+ATTAC
 */
 graph ""
 {
-node [margin=0 fontcolor=black fontsize=44 width=0.3 shape=circle style=filled]
-   n002 ;
-   n002 [label="C"] [color=darkolivegreen1];
-   n002 -- n003 [color=green, penwidth=3.0];
-   n003 [label="A"] [color=darkolivegreen1];
-   n003 -- n004 [color=green, penwidth=3.0];
-   n004 [label="T"] [color=brown1] ;
-   n003 -- n005 ;
-   n005 [label="C"] ;
-   n004 -- n006 [color=green, penwidth=3.0];
-   n006 [label="G"] [color=darkolivegreen1];
-   n006 -- n007 [color=green, penwidth=3.0];
-   n007 [label="A"] [color=darkolivegreen1];
-   n006 -- n008 [color=red, penwidth=3.0];
-   n008 [label="C"] [color=brown1];
-   n005 -- n009 ;
-   n009 [label="A"] ;
-   n009 -- n010 ;
-   n010 [label="T"] ;
+node [margin=0;
+    fontcolor=black;
+    fontsize=24;
+    width=0.3;
+    shape=circle; 
+    style=filled;
+    ];
+   root;
+   root [label=""] [shape = square];
+   n11 [label="A"]
+   root:sw--n11;
+   n12 [label="T"]
+   n11:sw--n12;
+   n13 [label="T"]
+   n12:sw--n13;
+   n14 [label="C"]
+   n13:sw--n14 ;
+   n15 [label="G"]
+   n14:sw--n15
+   n16 [label="G"]
+   n15:sw--n16
+   root:se -- n2 [color=green, penwidth=3.0 label="Matched"];
+   n2 ;
+   n2 [label="C"] [color=darkolivegreen1];
+   n2:se -- n3 [color=green, penwidth=3.0 label="Matched"];
+   n3 [label="A"] [color=darkolivegreen1];
+   n3:sw-- n4 [color=green, penwidth=3.0 label="Matched"];
+   n4 [label="T"] [color=brown1] ;
+   n3:se -- n5 ;
+   n5 [label="C"] ;
+   n4:sw -- n6 [color=green, penwidth=3.0 label="Unmatched, depth=1"];
+   n6 [label="G"] [color=darkolivegreen1 ];
+   n6:sw -- n7 [color=green, penwidth=3.0 label="Matched, depth=2"];
+   n7 [label="A"] [color=darkolivegreen1];
+   n7:sw -- n18 [color=green, penwidth=3.0 label="Matched, depth=3, sucess"];
+   n18 [label="A"] [color=darkolivegreen1];
+   n6:se -- n8 [color=red, penwidth=3.0 label="Unmatched, depth=2, break"];
+   n8 [label="C"] [color=brown1];
+   n8:sw -- n17 ;
+   n17 [label="A"]
+   n8 [label="C"] [color=brown1];
+   n5 -- n9 ;
+   n9 [label="A"] ;
+   n10 [label="T"];
+   n9 -- n10 ;
 }
