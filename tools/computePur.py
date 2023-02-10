@@ -28,14 +28,13 @@ def compute(fileIn, clustNum, gamma):
     clusters = [c for c in clusters if c != []]
     
     score = [0] * max(clustNum.keys())
-    for tagRef in range(1, len(score)+1):
-        for cluster in clusters:
-            if tagRef in cluster:
-                num = 0
-                for tag in cluster:
-                    if tag == tagRef:
-                        num+=1
-        score[tagRef-1] = max(score[tagRef-1], num)
+    for cluster in clusters:
+        tagNums = defaultdict(int)
+        for tag in cluster:
+            tagNums[tag] += 1
+        for tag in cluster:
+            if tagNums[tag] > score[tag-1]:
+                score[tag-1] = tagNums[tag]
 
     # Compute accuracy
     cnt = 0
