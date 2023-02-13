@@ -1,6 +1,7 @@
 clust/__pycache__
 clover/__pycache__
 msclust/__pycache__
+clust_cpp
 testdata/
 *.txt
 .vscode
