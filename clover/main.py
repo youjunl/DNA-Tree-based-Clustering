@@ -319,6 +319,7 @@ class MyProcess(Process):
 
                           
                     if fin_align[1] >= self.now_clust_threshold : #Add to core sequence set if conditions are met.
+
                         if self.config_dict['align_fuc'] == True:
                             self.ref_list[dna_num]=dna_str
                         self.ref_dict[dna_num]=[dna_tag]
@@ -614,7 +615,8 @@ if __name__ == '__main__':
         for key in process_dict :
             new_count_dict["index_list"]+=count_dict[key+"index_list"]
         output_file = open(config_dict['output_file'],'w')
-        output_file.write(str(new_count_dict["index_list"]))
+        for result in new_count_dict["index_list"]:
+            output_file.write(result[0] + ',' + result[1] + '\n')
         output_file.close()
     if config_dict['Virtual_mode'] == True :
         #print("Number of reads processed:",new_count_dict["sum_read_num"],new_count_dict["error_num"],new_count_dict["sum_cluster_num"])
