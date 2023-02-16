@@ -205,7 +205,7 @@ class Trie:
                 for i in range(len(result[3])):
                     chNum = result[3][i]
                     k = dna[0][:result[0]]+num2dnaDict[chNum]+dna[0][result[0]-len(dna[0]):]
-                    k = k[:16]
+                    k = k[:len(word)]
                     tmp_list.append([k,dna[1]+1])
 
         fin_list.append(error_list)
