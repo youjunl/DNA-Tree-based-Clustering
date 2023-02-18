@@ -21,14 +21,9 @@ python -m clust.main -I [input file] -O [output file] -L [options] --no-tag
 ```
 For example:
 ```shell
-# Large size data
+# test data
 python -m clover.main -I testdata/toClust.txt -O output_file_1 -L 152 -P 0 --no-tag
 python -m clust.main -I testdata/toClust.txt -O output_file_2 -L 152 -P 0 --no-tag
-```
-```shell
-# Small size test data
-python -m clover.main -I testdata/toClustSmall.txt -O output_file_1 -L 152 -P 0 --no-tag
-python -m clust.main -I testdata/toClustSmall.txt -O output_file_2 -L 152 -P 0 --no-tag
 ```
 
 The output of the clustering result consists of original label and the label of cluster assigned, 
@@ -46,11 +41,10 @@ for example:
 ```
 For comparing the clustering result, two different metrics can be computed, with commands:
 ```shell
-python tools/computeAcc.py [Labeled dataset] [Cluster result 1] [Cluster result 2]
-python tools/computePur.py [Labeled dataset] [Cluster result 1] [Cluster result 2]
+python tools/computeAcc.py [Labeled dataset] [Cluster result 1] [Cluster result 2] ... [Output file]
+python tools/computePur.py [Labeled dataset] [Cluster result 1] [Cluster result 2] ... [Output file]
 ```
 For example:
 ```shell
-python tools/computeAcc.py testdata/toClust.txt output_file_1.txt output_file_2.txt
+python tools/computeAcc.py testdata/toClust.txt output_file_1.txt output_file_2.txt CompareResults.txt
 ```
-
