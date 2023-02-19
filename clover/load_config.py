@@ -16,7 +16,7 @@ config_dict={
     "thd_tree_loc" : 40,
     "four_tree_loc" : 60,
     "Vertical_drift" : 3,
-    "Horizontal_drift" : 3,
+    "Horizontal_drift" : 5,
     "tree_threshold" : 10,
     "now_clust_threshold" : 1,
     "tag_nums" : 1,

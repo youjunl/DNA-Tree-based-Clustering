@@ -10,22 +10,20 @@ text = '''
 #############################################################################################
 '''
 
-def compute(fileIn, clustNum, gamma):
+def compute(fileIn, tags, clustNum, gamma):
     # Total number of clusters in the labeled data
     nClust = len(clustNum.keys())
 
     # Read clustering results
     results = []
     with open(fileIn, 'r') as f:
-        for text in f.readlines():
+        for i, text in enumerate(f.readlines()):
             text = text.strip()
             content = text.split(',')
-            # The first element of each line, which is the original tag in the labeled data.
-            tag = int(content[0])
-            # The second element of each line, which is the output clustering index of the algorithms.
+            # The second element of each line is the output clustering index of the algorithms.
             cluster = int(content[1])
             # Save these pairs in a list.
-            results.append((tag, cluster))
+            results.append((tags[i], cluster))
 
     # Sort the result according to the clustering index and get the max index number of clusters that algorithms output.
     results = sorted(results, key=lambda k: k[1])
@@ -80,7 +78,7 @@ if __name__ == '__main__':
         print(helpInfo)
         sys.exit(2)
 
-    if len(args<3):
+    if len(args)<3:
         print('No enough inputs, labeled data, cluster indexes and output filename are expected')
         print(helpInfo)
         sys.exit(2)
@@ -96,16 +94,17 @@ if __name__ == '__main__':
     # Count frequencies of tags in the labeled data.
     print('Counting tags in the labeled data...')
     clustNum = defaultdict(int)
+    tags = []
     with open(labeled, 'r') as f:
         for text in tqdm(f.readlines()):
-            origin = int(text.split(' ')[0])
-            clustNum[origin] += 1
-
+            ind, tag = map(int, text.strip().split(','))
+            clustNum[tag] += 1
+            tags.append(tag)
     # Compute accuracy for each input clustering indexes file
     print('Computing accuracy...')
-    outAcc = [0 for _ in indexes]
+    outAcc = [[] for _ in indexes]
     for i, infile in enumerate(indexes):
-        acc = compute(infile, clustNum, gamma)
+        acc = compute(infile, tags, clustNum, gamma)
         outAcc[i] = acc
 
     with open(outfile, 'w') as f:
@@ -114,11 +113,11 @@ if __name__ == '__main__':
         for g in gamma:
             f.write('%.4f, '%g)
         f.write('\n')
-        for acc in outAcc:
+        for i, accData in enumerate(outAcc):
             f.write(indexes[i])
             f.write('\n')
-            for g in acc:
-                f.write('%.4f, '%g)
+            for acc in accData:
+                f.write('%.4f, '%acc)
             f.write('\n')
     
     print('Finished!')
