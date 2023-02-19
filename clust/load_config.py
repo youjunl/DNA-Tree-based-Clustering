@@ -11,29 +11,8 @@ import sys
 config_dict={
     "read_len" : 152,
     "end_tree_len" : 21,
-    "other_tree_len" : 15,
-    "other_tree_nums" : 0,
-    "thd_tree_loc" : 40,
-    "four_tree_loc" : 40,
-    "Vertical_drift" : 0,
-    "Horizontal_drift" : 5, # Error threshold
     "tree_threshold" : 10,
-    "now_clust_threshold" : 8,
-    "tag_nums" : 1,
-    "processes_nums" : 0,
-    "Cluster_size_threshold" : 0,
-    "h_index_nums" : 40,
-    "e_index_nums" : 0,
-    "read_len_min" : 16,
-
-    "align_fuc" : False ,
-    "mmr_mode" : False ,
-    "Virtual_mode" : True,
-    "fast_mode" : True ,
-    "tag_mode" : False,
-    "Statistical_model" : False,
-    "same_tree_len" : True,
-    "now_align_alg" : False
+    "h_index_nums" : 0,
 }
 
 opt,args = getopt.getopt(sys.argv[1:],'-I:-L:-D:-V:-H:-T:-P:-O:-h',['help','low','no-fast','no-tag','stat'])
@@ -102,10 +81,6 @@ def out_put_config():
             config_dict['align_fuc'] = False
             config_dict['Statistical_model'] = False
             config_dict['Virtual_mode'] = False
-    if config_dict['read_len_min'] == 0 :
-        config_dict['read_len_min'] = config_dict['read_len'] - 5
-    if type(config_dict['Vertical_drift']) == int :
-        config_dict['Vertical_drift'] = generate_vertical_drifts_list(config_dict['Horizontal_drift']) 
     config_dict['tag']="""
     
  _____  _      _   _  _____  _____  _____ ______  _____  _   _  _____      ______  _____ ___  ___ _____ 

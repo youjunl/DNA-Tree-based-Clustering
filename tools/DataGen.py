@@ -51,9 +51,9 @@ if __name__ == '__main__':
     with open(readfile, 'w') as f:
         f.truncate(0)
         for i, read in enumerate(reads):
-            f.write(str(i) + ' ' + read + '\n')
+            f.write(str(i+1) + ' ' + read + '\n')
     with open(tagfile, 'w') as f:
         f.truncate(0)
         for i, tag in enumerate(tags):
-            f.write(str(i) + ',' + tag + '\n')
+            f.write(str(i+1) + ',' + tag + '\n')
     print('Finished!')

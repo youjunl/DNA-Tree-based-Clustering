@@ -319,7 +319,6 @@ class MyProcess(Process):
 
                           
                     if fin_align[1] >= self.now_clust_threshold : #Add to core sequence set if conditions are met.
-
                         if self.config_dict['align_fuc'] == True:
                             self.ref_list[dna_num]=dna_str
                         self.ref_dict[dna_num]=[dna_tag]
@@ -327,7 +326,7 @@ class MyProcess(Process):
                         self.b_tree.insert(dna_b_str,dna_num)
                         self.c_tree.insert(dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i],dna_num)
                         self.d_tree.insert(dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i],dna_num)
-                        self.index_list.append((dna_index,self.ref_dict[dna_num][0])) # accuracy fix
+
     #Process flow
     def run(self):
 
@@ -615,6 +614,7 @@ if __name__ == '__main__':
         for key in process_dict :
             new_count_dict["index_list"]+=count_dict[key+"index_list"]
         output_file = open(config_dict['output_file'],'w')
+        output_file.truncate(0)
         for result in new_count_dict["index_list"]:
             output_file.write(result[0] + ',' + result[1] + '\n')
         output_file.close()

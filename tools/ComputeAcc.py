@@ -18,12 +18,10 @@ def compute(fileIn, tags, clustNum, gamma):
     results = []
     with open(fileIn, 'r') as f:
         for i, text in enumerate(f.readlines()):
-            text = text.strip()
-            content = text.split(',')
             # The second element of each line is the output clustering index of the algorithms.
-            cluster = int(content[1])
+            ind, cluster = map(int, text.strip().split(','))
             # Save these pairs in a list.
-            results.append((tags[i], cluster))
+            results.append((tags[ind-1], cluster))
 
     # Sort the result according to the clustering index and get the max index number of clusters that algorithms output.
     results = sorted(results, key=lambda k: k[1])
@@ -94,12 +92,12 @@ if __name__ == '__main__':
     # Count frequencies of tags in the labeled data.
     print('Counting tags in the labeled data...')
     clustNum = defaultdict(int)
-    tags = []
-    with open(labeled, 'r') as f:
-        for text in tqdm(f.readlines()):
-            ind, tag = map(int, text.strip().split(','))
-            clustNum[tag] += 1
-            tags.append(tag)
+    lines = open(labeled, 'r').readlines()
+    tags = [0 for _ in range(len(lines))]
+    for text in lines:
+        ind, tag = map(int, text.strip().split(','))
+        clustNum[tag] += 1
+        tags[ind-1] = tag
     # Compute accuracy for each input clustering indexes file
     print('Computing accuracy...')
     outAcc = [[] for _ in indexes]

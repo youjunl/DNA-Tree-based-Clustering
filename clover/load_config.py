@@ -9,20 +9,20 @@ import getopt
 import sys
 
 config_dict={
-    "read_len" : 100,
+    "read_len" : 152,
     "end_tree_len" : 21, 
     "other_tree_len" : 21,
     "other_tree_nums" : 2,
     "thd_tree_loc" : 40,
-    "four_tree_loc" : 60,
-    "Vertical_drift" : 3,
+    "four_tree_loc" : 40,
+    "Vertical_drift" : 2,
     "Horizontal_drift" : 5,
     "tree_threshold" : 10,
-    "now_clust_threshold" : 1,
+    "now_clust_threshold" : 8,
     "tag_nums" : 1,
     "processes_nums" : 0,
     "Cluster_size_threshold" : 1,
-    "h_index_nums" : 20,
+    "h_index_nums" : 0,
     "e_index_nums" : 0,
     "read_len_min" : 0,
 

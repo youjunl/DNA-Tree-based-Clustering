@@ -45,7 +45,8 @@ class Trie:
             return node.isEnd
         
         # Return False when current error larger than thresold
-        if sum(error) > maxErr or pos >= len(word):
+        currentErr = sum(error)
+        if currentErr > maxErr or pos >= len(word):
             return -1
         
         # Else continue traversal
@@ -64,7 +65,7 @@ class Trie:
             sub_list = []
             tmp_list=[i for i in range(self.node_nums) if node.children[i]]
             maxOptimDepth = self.maxOptimDepth
-            traverseNum = min(len(word)-pos-1, maxOptimDepth)            
+            traverseNum = min(len(word)-pos-1, maxOptimDepth)         
             for chNum in tmp_list:
                 #Deletion
                 depth = 0
