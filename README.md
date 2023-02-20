@@ -1,29 +1,28 @@
 # DNA Tree based Clustering
 
 ## How to use
-For benchmarking these algorithms, a labeled dataset in TXT format is needed. And each line should be like:
+A read file in TXT format is needed for clustering, and each line should be like:
 ```shell
 [Label] [Read]
 ```
 For example:
 ```shell
 1 ATAAGGG
-1 AAAAGGG
-1 AAAAGGG
-2 GGACCTA
-2 GGACCTA
+2 AAAAGGG
+3 AAAAGGG
+4 GGACCTA
+5 GGACCTA
 ...
 ```
 
 Run the clustering with command:
 ```shell
-python -m clust.main -I [input file] -O [output file] -L [options] --no-tag
+python -m clust.main -I [input file] -O [output file]
 ```
 For example:
 ```shell
 # test data
-python -m clover.main -I testdata/toClust.txt -O output_file_1 -L 152 -P 0 --no-tag
-python -m clust.main -I testdata/toClust.txt -O output_file_2 -L 152 -P 0 --no-tag
+python -m clust.main -I testdata/toClust.txt -O output_file
 ```
 
 The output of the clustering result consists of original label and the label of cluster assigned, 
@@ -33,16 +32,30 @@ The output of the clustering result consists of original label and the label of 
 for example:
 ```shell
 1,1
-1,1
-1,1
-2,2
-2,2
+2,1
+3,1
+4,2
+5,2
 ...
 ```
-For comparing the clustering result, two different metrics can be computed, with commands:
+For comparing the clustering result, a TXT file that indeicates accuracte clustering index is need:
 ```shell
-python tools/computeAcc.py [Labeled dataset] [Cluster result 1] [Cluster result 2] ... [Output file]
-python tools/computePur.py [Labeled dataset] [Cluster result 1] [Cluster result 2] ... [Output file]
+[Label],[Label of cluster]
+```
+for example:
+```shell
+1,1
+2,1
+3,1
+4,2
+5,2
+...
+```
+
+Two different metrics can be computed with commands:
+```shell
+python tools/computeAcc.py [Accurate indexes] [Cluster result 1] [Cluster result 2] ... [Output file]
+python tools/computePur.py [Accurate indexes] [Cluster result 1] [Cluster result 2] ... [Output file]
 ```
 For example:
 ```shell
