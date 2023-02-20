@@ -19,27 +19,32 @@ class MyProcess():
         self.index_list=[]
         self.test_num = 0
         self.clust_num = 0
-
+        self.insertion = 0
+        self.deletion = 0
+        self.substitution = 0
+        self.chCnt = 0
 
     def cluster(self, dna_tag, dna_str):
         self.test_num += 1
+        dna_str = dna_str.strip('N')
+        self.chCnt += len(dna_str)
         if self.h_index == 0 :
             dna_str = dna_str[:self.dntree_nums]
         else:
             dna_str = dna_str[self.h_index:self.h_index+self.dntree_nums]
 
-        if "N" in dna_str:
-            pass 
-        else:
-            align_result = self.tree.match(dna_str,self.config_dict['tree_threshold']) 
+        align_result = self.tree.fuzz_fin(dna_str,self.config_dict['tree_threshold']) 
+        
+        if sum(align_result[1]) < self.config_dict['tree_threshold']:  #If the match is successful, it is recorded.
+            self.index_list.append((dna_tag, align_result[0]))
+            self.insertion += align_result[1][0]
+            self.deletion += align_result[1][1]
+            self.substitution += align_result[1][2]
 
-            if align_result > 0:  #If the match is successful, it is recorded.
-                self.index_list.append((dna_tag, align_result))
-                
-            else:
-                self.clust_num += 1
-                self.tree.insert(dna_str,self.clust_num)
-                self.index_list.append((dna_tag, self.clust_num))
+        else:
+            self.clust_num += 1
+            self.tree.insert(dna_str,self.clust_num)
+            self.index_list.append((dna_tag, self.clust_num))
 
     #Process flow
     def run(self):
@@ -69,7 +74,10 @@ if __name__ == '__main__':
     p = MyProcess(lines)
     p.run()
     print("Time:",time.time()-st)
-
+    print("Estimated Channel:")
+    print("I: %d, %.4f%%"%(p.insertion, p.insertion/p.test_num/p.dntree_nums))
+    print("D: %d, %.4f%%"%(p.deletion, p.deletion/p.test_num/p.dntree_nums))
+    print("S: %d, %.4f%%"%(p.substitution, p.substitution/p.test_num/p.dntree_nums))
     if 'output_file' in config_dict:
         output_file = open(config_dict['output_file'], 'w')
         output_file.truncate(0)

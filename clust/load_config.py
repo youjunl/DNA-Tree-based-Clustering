@@ -11,7 +11,7 @@ import sys
 config_dict={
     "read_len" : 152,
     "end_tree_len" : 21,
-    "tree_threshold" : 10,
+    "tree_threshold" : 5,
     "h_index_nums" : 0,
 }
 

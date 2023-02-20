@@ -324,8 +324,9 @@ class MyProcess(Process):
                         self.ref_dict[dna_num]=[dna_tag]
                         self.a_tree.insert(dna_a_str,dna_num)
                         self.b_tree.insert(dna_b_str,dna_num)
-                        self.c_tree.insert(dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i],dna_num)
-                        self.d_tree.insert(dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i],dna_num)
+                        if self.config_dict['other_tree_nums'] == 2 :
+                            self.c_tree.insert(dna_str[self.fuzz_list[0]-i:self.fuzz_list[0]+self.fuzz_list[2]-i],dna_num)
+                            self.d_tree.insert(dna_str[self.read_len-2-self.fuzz_list[1]-i:self.read_len-2-self.fuzz_list[1]+self.fuzz_list[2]-i],dna_num)
 
     #Process flow
     def run(self):
