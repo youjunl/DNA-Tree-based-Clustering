@@ -6,7 +6,7 @@ import getopt, sys
 
 text = '''
 #############################################################################################
-#Implementation of second stage clustering:                                                 #
+#Implementation of second stage clustering (for DNA fountain):                              #
 #############################################################################################
 '''
 
@@ -40,7 +40,7 @@ def bin_to_dna(bin_str):
 if __name__ == '__main__':
     print(text)
     # Inputs Management
-    helpInfo = '[Usage]\nComputeAcc.py <reads data> <cluster indexes file> <output file>'
+    helpInfo = '[Usage]\nSSClust.py <reads data> <cluster indexes file> <output file>'
     try:
         opts, args = getopt.getopt(sys.argv[1:],"h",[])
         for opt, arg in opts:
@@ -116,7 +116,10 @@ if __name__ == '__main__':
                 continue
             
             cnt_corrected += 1
-            print(bin_to_dna(byte_to_bin(data_corrected)))
+            dna_corrected = bin_to_dna(byte_to_bin(data_corrected))
+
+            # Get seed from the sample and compare with the tree
+
     
     
     print('%d out of %d are corrected'%(cnt_corrected, len(lines)))
