@@ -1,46 +1,68 @@
-import numpy as np
-from reedsolo import RSCodec
+import matplotlib.pyplot as plt
 from collections import defaultdict
 from tqdm import tqdm
 import getopt, sys
 
 text = '''
 #############################################################################################
-#Implementation of second stage clustering (for DNA fountain):                              #
+#Implementation of accuracy in paper:                                                       #
+#Rashtchian, Cyrus, et al. "Clustering billions of reads for DNA data storage." NIPS 2017.  #
 #############################################################################################
 '''
 
-dna_to_num = {'A':0,'C':1,'G':2,'T':3}
-num_to_dna = {0:'A',1:'C',2:'G',3:'T'}
-max_hamming = 2
-codec = RSCodec(2) # 2Bytes
+def compute(fileIn, tags, clustNum, gamma):
+    # Total number of clusters in the labeled data
+    nClust = len(clustNum.keys())
 
-def dna_to_int_array(dna_str):
-    #convert a string like ACTCA to an array of ints like [10, 2, 4]
-    s = ''
-    for ch in dna_str:
-        s += '{0:02b}'.format(int(dna_to_num[ch]))
+    # Read clustering results
+    results = []
+    with open(fileIn, 'r') as f:
+        for i, text in enumerate(f.readlines()):
+            # The second element of each line is the output clustering index of the algorithms.
+            ind, cluster = map(int, text.strip().split(','))
+            # Save these pairs in a list.
+            results.append((tags[ind-1], cluster))
+
+    # Sort the result according to the clustering index and get the max index number of clusters that algorithms output.
+    results = sorted(results, key=lambda k: k[1])
+    maxClustNum = results[-1][1] if len(results) > 0 else 0
+
+    # Cluster the tags according to the clustering indexes.
+    clusters = [[] for _ in range(maxClustNum)]
+    for i in range(len(results)):
+        clusters[results[i][1]-1].append(results[i][0])
+
+    # Remove empty clusters
+    clusters = [c for c in clusters if c != []]
     
-    data = [int(s[t:t+8],2) for t in range(0,len(s), 8)]
-    return data
+    # A list that stores the maximum size of correct clustering for different tags.
+    score = [0] * max(clustNum.keys())
+    for cluster in clusters:
+        # Check if all the tags in a clusters are the same.
+        tags = set(cluster)
+        if len(tags) > 1:
+            # This cluster is invalid
+            continue
+        
+        # Maximize the size of the clusters.
+        tag = cluster[0]
+        score[tag-1] = max(score[tag-1], len(cluster))
 
-def byte_to_bin(s):
-    #convert byte data (\x01 \x02) to DNA data: ACTC
-    bin_data = ''
-    for b in s:
-        bin_data += '{0:08b}'.format(b)
-    return bin_data
-
-def bin_to_dna(bin_str):
-    dna_str = ''
-    for t in range(0, len(bin_str), 2):
-        dna_str += num_to_dna[int(bin_str[t:t+2],2)]
-    return dna_str
+    # Compute accuracy under different gammas.
+    acc = [0 for _ in gamma]
+    
+    for i, g in enumerate(gamma):
+        cnt = 0
+        for tag in clustNum.keys():
+            if score[tag-1] / clustNum[tag] >= g:
+                cnt += 1
+        acc[i] = cnt / nClust
+    return acc
 
 if __name__ == '__main__':
     print(text)
     # Inputs Management
-    helpInfo = '[Usage]\nSSClust.py <reads data> <cluster indexes file> <output file>'
+    helpInfo = '[Usage]\nComputeAcc.py <labeled data> <cluster indexes file> <luster indexes file 2> ... <output file>'
     try:
         opts, args = getopt.getopt(sys.argv[1:],"h",[])
         for opt, arg in opts:
@@ -60,68 +82,40 @@ if __name__ == '__main__':
         sys.exit(2)
 
     labeled = args[0]
-    indexes = args[1]
-    outfile = args[2]
-    
-    # Processing original reads
+    indexes = args[1:-1]
+    outfile = args[-1]
+
+    # Set range of gamma
+    gamma = [i*0.02 for i in range(20, 51)]
+    acc = [0] * len(gamma)
+
+    # Count frequencies of tags in the labeled data.
+    print('Counting tags in the labeled data...')
+    clustNum = defaultdict(int)
     lines = open(labeled, 'r').readlines()
-    reads = ['' for _ in range(len(lines))]
+    tags = [0 for _ in range(len(lines))]
     for text in lines:
-        ind, read = text.strip().split(' ')
-        reads[int(ind)-1] = read
+        ind, tag = map(int, text.strip().split(','))
+        clustNum[tag] += 1
+        tags[ind-1] = tag
+    # Compute accuracy for each input clustering indexes file
+    print('Computing accuracy...')
+    outAcc = [[] for _ in indexes]
+    for i, infile in enumerate(indexes):
+        acc = compute(infile, tags, clustNum, gamma)
+        outAcc[i] = acc
 
-    # Processing clustering
-    results = []
-    lines = open(indexes, 'r').readlines()
-    tags = [[] for _ in range(len(lines))]
-    for text in lines:
-        ind, cluster = map(int, text.strip().split(','))
-        results.append((ind, cluster))
-
-    # Sort the result according to the clustering index and get the max index number of clusters that algorithms output.
-    results = sorted(results, key=lambda k: k[1])
-    maxClustNum = results[-1][1] if len(results) > 0 else 0   
-
-    # Cluster the reads according to the clustering indexes.
-    clusters = [[] for _ in range(maxClustNum)]
-    for i in range(len(results)):
-        clusters[results[i][1]-1].append((results[i][0], reads[results[i][0]-1]))
-
-    # Remove empty clusters
-    clusters = [c for c in clusters if c != []]
+    with open(outfile, 'w') as f:
+        f.truncate(0)
+        f.write('Gamma:\n')
+        for g in gamma:
+            f.write('%.4f, '%g)
+        f.write('\n')
+        for i, accData in enumerate(outAcc):
+            f.write(indexes[i])
+            f.write('\n')
+            for acc in accData:
+                f.write('%.4f, '%acc)
+            f.write('\n')
     
-    cnt_corrected = 0
-    cnt_detected = 0
-    
-    for cluster in clusters:
-        for pair in cluster:
-            ind, read = pair
-            if 'N' in read:
-                continue
-            dna = dna_to_int_array(read)
-            try:
-                #First is the decoded/repaired message
-                #Second is the decoded message and error correction code (because both get repaired in reality)
-                #Third is the position of the errors and erasures.
-                data_corrected, _, _ = codec.decode(dna)
-
-            except:
-                continue #could not correct the code
-            
-            #we will encode the data again to evaluate the correctness of the decoding
-            data_again = list(codec.encode(data_corrected)) #list is to convert byte array to int
-            if np.count_nonzero(dna != data_again) > max_hamming: #measuring hamming distance between raw input and expected raw input
-                #too many errors to correct in decoding
-                cnt_detected += 1                 
-                continue
-            
-            cnt_corrected += 1
-            dna_corrected = bin_to_dna(byte_to_bin(data_corrected))
-
-            # Get seed from the sample and compare with the tree
-
-    
-    
-    print('%d out of %d are corrected'%(cnt_corrected, len(lines)))
-    print('%d out of %d are detected'%(cnt_detected, len(lines)))
     print('Finished!')
