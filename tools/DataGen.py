@@ -41,19 +41,23 @@ if __name__ == '__main__':
         reads.append(read)
         tags.append(tag)
     f.close()
-    print('Shuffleing results')
+    print('Shuffling results')
     nRead = len(reads)
     inds = np.arange(nRead)
     np.random.shuffle(inds)
-    reads = np.array(reads)[inds]
-    tags = np.array(tags)[inds]
     print('Write data')
-    with open(readfile, 'w') as f:
-        f.truncate(0)
-        for i, read in enumerate(reads):
-            f.write(str(i+1) + ' ' + read + '\n')
-    with open(tagfile, 'w') as f:
-        f.truncate(0)
-        for i, tag in enumerate(tags):
-            f.write(str(i+1) + ',' + tag + '\n')
+
+    # Open target file
+    fread = open(readfile, 'w')
+    ftag = open(tagfile, 'w')
+
+    # clear
+    fread.truncate(0)
+    ftag.truncate(0)
+
+    for ind in inds:
+        fread.write(str(ind+1) + ' ' + str(reads[ind]) + '\n')
+        ftag.write(str(ind+1) + ',' + str(tags[ind]) + '\n')
+    fread.close()
+    ftag.close()
     print('Finished!')
