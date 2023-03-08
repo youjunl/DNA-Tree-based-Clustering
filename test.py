@@ -4,6 +4,7 @@ import numpy as np
 import random
 import matplotlib.pyplot as plt
 from clust.seq_kmeans import SeqKmeans, SoftSeqKmeans
+from clust.chainer_edit_distance import soft_edit_distance, edit_distance
 from clust.tree import Trie
 import time
 from collections import defaultdict
@@ -263,17 +264,15 @@ def SSCRS(indexList, dnaData):
                     #too many errors to correct in decoding
                     cnt_detected += 1                 
                     seed = dna_to_seed(read[:16])
-                    continue
                 
                 else:
                     cnt_corrected += 1
                     dna_str_corrected = int_array_to_dna(data_again)
-                    seed = dna_to_seed(read[:16])
+                    seed = dna_to_seed(dna_str_corrected[:16])
                 
 
             else:
                 seed = dna_to_seed(read[:16])
-                continue
 
             if seed not in freq.keys():
                 freq[seed] = 1
@@ -313,7 +312,7 @@ def SSCRS(indexList, dnaData):
     print('Reads corrected: %d'%cnt_corrected)
     return newIndexList
 
-def SSCML(indexList, dnaData, iter):
+def SSCKmeans(indexList, dnaData, iter):
     begin = time.time()
     maxClusterIndex = max(indexList, key=lambda k: k[1])
     tags = [index[1] for index in indexList]
@@ -328,7 +327,7 @@ def SSCML(indexList, dnaData, iter):
     clusterMap = dict()
     for i, cluster in enumerate(clusters):
         # Skip empty clusters
-        if len(cluster) == 0:
+        if len(cluster) < 1:
             continue
         
         # Record the frequencies of seeds
@@ -360,23 +359,21 @@ def SSCML(indexList, dnaData, iter):
         else:
             clusterMap[clusterInd] = seedMap[maxSeed]
             
-    for tag in set(tags):
-        if tag not in clusterMap.keys():
-            clusterMap[tag] = tag # Map to itself
-
-    # Clustering with Kmeans
-    alphabet = np.array(['A', 'T', 'G', 'C'])
-    alg = SeqKmeans(n_centroid = nCluster, centroid_length = 16, alphabet=alphabet)
     data = []
     dataClusterInd = []
     for seed in seeds:
         dnaSeed = seed_to_dna(seed)
         data.append(dnaSeed)
         dataClusterInd.append(seedMap[seed])
-    
-    lcurve = alg.fit(np.array(data), n_iter=iter)
-    labels = alg.transform(data)
 
+    # Clustering with Kmeans
+    alphabet = np.array(['A', 'T', 'G', 'C'])
+    alg = SoftSeqKmeans(n_centroid = min(nCluster, len(data)), centroid_length = 16, alphabet=alphabet, tau=2)
+    
+    lcurve = alg.fit(np.array(data), n_iter=20, optimizer='Adam')
+    labels = alg.transform(data)
+    for i, l in enumerate(labels):
+        print(l, dataClusterInd[i], data[i])
     print('Number of clusters before KMeans: %d'%len(data))
     print('Number of clusters after KMeans: %d'%len(set(labels)))
 
@@ -389,6 +386,11 @@ def SSCML(indexList, dnaData, iter):
         else:
             # Update merging
             clusterMap[dataClusterInd[i]] = MLMap[label]
+
+    # # Considering cluster that size < p
+    # for tag in set(tags):
+    #     if tag not in clusterMap.keys():
+    #         clusterMap[tag] = tag # Map to itself
 
     newIndexList = []
     for clustInd, tag in indexList:
@@ -404,9 +406,9 @@ if __name__ == '__main__':
     state = 0b001
     mask = 0b100000000000000000000000011000101
     psnr = lfsr(state, mask)
-    pi, pd, ps = 0.001, 0.001, 0.001
-    nCluster = 20
-    clusterSize = [15, 40]
+    pi, pd, ps = 0.003, 0.003, 0.003
+    nCluster = 2000
+    clusterSize = [25, 140]
     extraLen = 16
     rscode = 2
     max_hamming = 2
@@ -481,13 +483,13 @@ if __name__ == '__main__':
     indexListSSCRS = SSCRS(indexList, dnaData)
     gamma, accSSCRS = computeAccuracy(indexListSSCRS)
 
-    indexListSSCML = SSCML(indexList, dnaData, iter=20)
-    gamma, accSSCML = computeAccuracy(indexListSSCML)
+    # indexListSSCKmeans = SSCKmeans(indexList, dnaData, iter=20)
+    # gamma, accSSCKmeans = computeAccuracy(indexListSSCKmeans)
 
     plt.figure()
     plt.plot(gamma, acc, '-')
     plt.plot(gamma, accSSC, '--^')
     plt.plot(gamma, accSSCRS, '--o')
-    plt.plot(gamma, accSSCML, '--*')
-    plt.legend(['original', 'ssc', 'sscrs', 'sscml'])
+    # plt.plot(gamma, accSSCKmeans, '--*')
+    # plt.legend(['original', 'ssc', 'sscrs', 'SSCKmeans'])
     plt.show()
