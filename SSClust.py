@@ -122,37 +122,8 @@ if __name__ == '__main__':
         for read in cluster:
             if 'N' in read:
                 continue
-            dna = dna_to_int_array(read)
-            detected = False
-            try:
-                #First is the decoded/repaired message
-                #Second is the decoded message and error correction code (because both get repaired in reality)
-                #Third is the position of the errors and erasures.
-                data_corrected, _, _ = codec.decode(dna)
-                detected = True
-                
-            except:
-                detected = False #could not correct the code
 
-            if detected:
-                #we will encode the data again to evaluate the correctness of the decoding
-                data_again = list(codec.encode(data_corrected)) #list is to convert byte array to int
-                if np.count_nonzero(dna != data_again) > max_hamming: #measuring hamming distance between raw input and expected raw input
-                    #too many errors to correct in decoding
-                    cnt_detected += 1                 
-                    seed = dna_to_seed(read[:16])
-                    continue
-                
-                else:
-                    cnt_corrected += 1
-                    dna_str_corrected = int_array_to_dna(data_again)
-                    seed = dna_to_seed(read[:16])
-                
-
-            else:
-                seed = dna_to_seed(read[:16])
-                continue
-
+            seed = dna_to_seed(read[:16])
             if seed not in freq.keys():
                 freq[seed] = 1
             else:
@@ -176,6 +147,7 @@ if __name__ == '__main__':
             clusterMap[clusterInd] = clusterInd
         else:
             clusterMap[clusterInd] = seedMap[maxSeed]
+        print(len(seeds))
             
     for tag in tags:
         if tag not in clusterMap.keys():

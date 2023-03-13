@@ -312,6 +312,64 @@ def SSCRS(indexList, dnaData):
     print('Reads corrected: %d'%cnt_corrected)
     return newIndexList
 
+def SSCLCS(indexList, dnaData):
+    begin = time.time()
+    maxClusterIndex = max(indexList, key=lambda k: k[1])
+    tags = [index[1] for index in indexList]
+    clusters = [[] for _ in range(maxClusterIndex[1])]
+    for i, read in enumerate(dnaData):
+        clustInd, tag = indexList[i]
+        clusters[tag-1].append(read)
+
+    seeds = []
+    seedMap = dict()
+    clusterMap = dict()
+    for i, cluster in enumerate(clusters):
+        # Skip empty clusters
+        if len(cluster) == 0:
+            continue
+        
+        # Record the frequencies of seeds
+        freq = dict()
+        for read in cluster:
+            seed = dna_to_seed(read[:16])
+            if seed not in freq.keys():
+                freq[seed] = 1
+            else:
+                freq[seed] += 1
+        
+        # Majority selection for the center seed
+        maxSeed = -1
+        maxFreq = 0
+        for k in freq.keys():
+            if freq[k] > maxFreq:
+                maxFreq = freq[k]
+                maxSeed = k
+        if maxSeed == -1:
+            continue
+        
+        # Create a mapping
+        clusterInd = i + 1
+        if maxSeed not in seeds:
+            seeds.append(maxSeed)
+            seedMap[maxSeed] = clusterInd # For merging the other clusters
+            clusterMap[clusterInd] = clusterInd
+        else:
+            clusterMap[clusterInd] = seedMap[maxSeed]
+            
+    for tag in set(tags):
+        if tag not in clusterMap.keys():
+            clusterMap[tag] = tag # Map to itself
+        
+    newIndexList = []
+    for clustInd, tag in indexList:
+        newIndexList.append((clustInd, clusterMap[tag]))
+    tags = [index[1] for index in newIndexList]
+    print('time spent:', time.time()-begin)
+    print('Found %d clusters'%len(clusters))
+    print('Generate %d clusters'%len(set(tags)))
+    return newIndexList
+
 def SSCKmeans(indexList, dnaData, iter):
     begin = time.time()
     maxClusterIndex = max(indexList, key=lambda k: k[1])
@@ -407,7 +465,7 @@ if __name__ == '__main__':
     mask = 0b100000000000000000000000011000101
     psnr = lfsr(state, mask)
     pi, pd, ps = 0.003, 0.003, 0.003
-    nCluster = 2000
+    nCluster = 20
     clusterSize = [25, 140]
     extraLen = 16
     rscode = 2
