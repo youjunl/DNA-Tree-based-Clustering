@@ -13,10 +13,12 @@ config_dict={
     "end_tree_len" : 21,
     "tree_threshold" : 5,
     "h_index_nums" : 0,
+    "processes_nums" : 1,
+    "multi_stage": False,
+    "reduce_size": 2,
 }
 
-opt,args = getopt.getopt(sys.argv[1:],'-I:-L:-D:-V:-H:-T:-P:-O:-h',['help','low','no-fast','no-tag','stat'])
-
+opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-h',['help','multi-stage'])
 
 #Read input info
 def load_json(path):
@@ -42,45 +44,46 @@ def generate_vertical_drifts_list(x):
     return list
 
 #Write the input to config.json
+helpInfo = '''
+DNA Tree Based Clustering
+#################################
+Command: python -m clust.main -I [input file] -O [output_file] ... [options]
+-I file to be clustered
+-O output result
+
+Options:
+-D tree depth
+-H tree threshold
+-P number of processors
+-S number of extra stages of clustering
+-R reduce size
+--multi-stage enable multistage clustering 
+'''
 def out_put_config():
-    opt,args = getopt.getopt(sys.argv[1:],'-I:-L:-D:-V:-H:-T:-P:-O:-h',['help','low','no-fast','no-tag','stat'])
+    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-h',['help','multi-stage'])
 
     for opt_name,opt_value in opt :
         if '-h' in opt_name or '--help' in opt_name:
-            print("Please see readme.md")
+            print(helpInfo)
         if '-I' in opt_name :
             config_dict['input_path'] = opt_value
-        if '-L' in opt_name :
-            config_dict['read_len'] =int(opt_value)
-        if '-D' in opt_name :
-            config_dict['end_tree_len'] = int(opt_value)
-            if config_dict['same_tree_len'] == True :
-                config_dict['other_tree_len'] = int(opt_value)
-        if '-V' in opt_name :
-            config_dict['Vertical_drift'] = generate_vertical_drifts_list(opt_value)
         if '-H' in opt_name :
-            config_dict['Horizontal_drift'] = int(opt_value)
-        if  '-T' in opt_name :
-            config_dict['tag_nums'] = int(opt_value)
-            config_dict['tag_mode'] = True
+            config_dict['tree_threshold'] = int(opt_value)
         if '-P' in opt_name :
             config_dict['processes_nums'] = int(opt_value)
         if '-O' in opt_name :
-            config_dict['output_file'] = opt_value+'.txt'
-        if '--align' in opt_name:
-            config_dict['align_fuc'] = True 
-        if '--no-fast' in opt_name:
-            config_dict['fast_mode'] = False
-        if '--no-tag' in opt_name :
-            config_dict['Virtual_mode'] = False
-        if '--stat' in opt_name :
-            config_dict['Statistical_model'] = True
-        if '--low' in opt_name:
-            config_dict['mmr_mode'] = True
-            config_dict['fast_mode'] = False
-            config_dict['align_fuc'] = False
-            config_dict['Statistical_model'] = False
-            config_dict['Virtual_mode'] = False
+            config_dict['output_file'] = opt_value
+        if '-D' in opt_name :
+            config_dict['end_tree_len'] = int(opt_value)
+        if '-S' in opt_name:
+            config_dict['multi_stage'] = True
+            config_dict['extra_stage_num'] = int(opt_value)
+        if '-R' in opt_name:
+            config_dict['reduce_size'] = int(opt_value)
+        if 'multi-stage' in opt_name:
+            config_dict['multi_stage'] = True
+            if 'extra_stage_num' not in config_dict.keys():
+                config_dict['extra_stage_num'] = 1
     config_dict['tag']="""
     
  _____  _      _   _  _____  _____  _____ ______  _____  _   _  _____      ______  _____ ___  ___ _____ 

@@ -147,7 +147,6 @@ if __name__ == '__main__':
             clusterMap[clusterInd] = clusterInd
         else:
             clusterMap[clusterInd] = seedMap[maxSeed]
-        print(len(seeds))
             
     for tag in tags:
         if tag not in clusterMap.keys():
