@@ -106,8 +106,6 @@ if __name__ == '__main__':
 
             for p in Processes:
                 p.join()
-
-                print('All processes finished')
                 indexList = indexListMP
         # Multi stage clustering
         start_tree_depth = config_dict["end_tree_len"]
