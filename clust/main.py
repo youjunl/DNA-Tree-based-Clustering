@@ -106,16 +106,16 @@ if __name__ == '__main__':
 
             for p in Processes:
                 p.join()
-
-                print('All processes finished')
                 indexList = indexListMP
         # Multi stage clustering
         start_tree_depth = config_dict["end_tree_len"]
         tree_depth = start_tree_depth
         stageNum = config_dict['extra_stage_num']
         tree_threshold = config_dict["tree_threshold"]
+        spliterFlag = config_dict["spliter"]
+        filterFlag = config_dict["filter"]
         for i in range(stageNum):
-            indexList = ssc_repeat(indexList, data, tree_depth, tree_threshold)
+            indexList = ssc_repeat(indexList, data, tree_depth, tree_threshold, filter=filterFlag, spliter=spliterFlag)
             tree_depth -= 2
             print('st %d'%(i+2))
     print('Time: %f'%(time.time()-st))

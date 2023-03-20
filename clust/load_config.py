@@ -16,9 +16,11 @@ config_dict={
     "processes_nums" : 1,
     "multi_stage": False,
     "reduce_size": 2,
+    "spliter": False,
+    "filter": False,
 }
 
-opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-h',['help','multi-stage'])
+opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-h',['help','multi-stage','enable-spliter'])
 
 #Read input info
 def load_json(path):
@@ -60,7 +62,7 @@ Options:
 --multi-stage enable multistage clustering 
 '''
 def out_put_config():
-    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-h',['help','multi-stage'])
+    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-h',['help','multi-stage','enable-spliter'])
 
     for opt_name,opt_value in opt :
         if '-h' in opt_name or '--help' in opt_name:
@@ -84,6 +86,10 @@ def out_put_config():
             config_dict['multi_stage'] = True
             if 'extra_stage_num' not in config_dict.keys():
                 config_dict['extra_stage_num'] = 1
+        if 'enable-spliter' in opt_name:
+            config_dict['spliter'] = True
+        if 'enable-filter' in opt_name:
+            config_dict['filter'] = True
     config_dict['tag']="""
     
  _____  _      _   _  _____  _____  _____ ______  _____  _   _  _____      ______  _____ ___  ___ _____ 
