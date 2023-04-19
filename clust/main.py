@@ -36,24 +36,49 @@ class SingleProcess():
             dna_str = dna_str[self.h_index:self.h_index+self.read_len]
 
         align_result = self.tree.fuzz_fin(
-            dna_str, self.config_dict['tree_threshold'])
+            dna_str, self.config_dict['tree_threshold'], self.read_len)
 
         # If the match is successful, it is recorded.
-        if sum(align_result[1]) < self.config_dict['tree_threshold']:
+        if align_result[1] < self.config_dict['tree_threshold']:
             self.indexList.append((dna_tag, align_result[0]))
-            self.insertion += align_result[1][0]
-            self.deletion += align_result[1][1]
-            self.substitution += align_result[1][2]
 
         else:
             self.clust_num += 1
-            self.tree.insert(dna_str, self.clust_num)
+            self.tree.insert(dna_str[:self.config_dict['end_tree_len']], str(self.clust_num))
             self.indexList.append((dna_tag, self.clust_num))
 
-    # Process flow
+    def cluster_with_index(self, dna_tag, dna_str):
+        self.chCnt += len(dna_str)
+        if self.h_index == 0:
+            dna_str = dna_str[:self.read_len]
+        else:
+            dna_str = dna_str[self.h_index:self.h_index+self.read_len]
+
+        align_result = self.tree.fuzz_fin(
+            dna_str, self.config_dict['tree_threshold'], self.read_len)
+
+        # If the match is successful, it is recorded.
+        if align_result[1] < self.config_dict['tree_threshold']:
+            self.indexList.append((dna_tag, align_result[0]))
+
+        else:
+            self.clust_num += 1
+            self.tree.insert(dna_str[:self.config_dict['end_tree_len']], str(self.clust_num))
+            self.indexList.append((dna_tag, self.clust_num))
+
     def run(self):
-        for tag, read in tqdm(self.data):
-            self.cluster(tag, read)
+        if self.config_dict['use_index']:
+            with open(self.config_dict['index_file'], 'r') as f:
+                for line in f.readlines():
+                    seq = line.strip()
+                    self.clust_num += 1
+                    self.tree.insert(seq[:self.read_len], str(self.clust_num))
+            for tag, read in tqdm(self.data):
+                self.cluster_with_index(tag, read)
+
+        else:
+            for tag, read in tqdm(self.data):
+                self.cluster(tag, read)
 
 def chunks(arr, m):
     n = int(math.ceil(len(arr) / float(m)))

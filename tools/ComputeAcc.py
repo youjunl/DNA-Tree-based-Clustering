@@ -16,12 +16,19 @@ def compute(fileIn, tags, clustNum, gamma):
 
     # Read clustering results
     results = []
+
+    # Number of alignment results
+    nTags = len(tags)
     with open(fileIn, 'r') as f:
         for i, text in enumerate(f.readlines()):
             # The second element of each line is the output clustering index of the algorithms.
             ind, cluster = map(int, text.strip().split(','))
             # Save these pairs in a list.
-            results.append((tags[ind-1], cluster))
+            if ind >= nTags:
+                break
+            if tags[ind-1] != -1:
+                results.append((tags[ind-1], cluster))
+            
 
     # Sort the result according to the clustering index and get the max index number of clusters that algorithms output.
     results = sorted(results, key=lambda k: k[1])
@@ -62,7 +69,7 @@ def compute(fileIn, tags, clustNum, gamma):
 if __name__ == '__main__':
     print(text)
     # Inputs Management
-    helpInfo = '[Usage]\nComputeAcc.py <labeled data> <cluster indexes file> <luster indexes file 2> ... <output file>'
+    helpInfo = '[Usage]\nComputeAcc.py <labeled data> <cluster indexes file> <cluster indexes file 2> ... <output file>'
     try:
         opts, args = getopt.getopt(sys.argv[1:],"h",[])
         for opt, arg in opts:
@@ -93,11 +100,12 @@ if __name__ == '__main__':
     print('Counting tags in the labeled data...')
     clustNum = defaultdict(int)
     lines = open(labeled, 'r').readlines()
-    tags = [0 for _ in range(len(lines))]
+    tags = [-1 for _ in range(int(lines[-1].split(',')[0]))]
     for text in lines:
         ind, tag = map(int, text.strip().split(','))
         clustNum[tag] += 1
         tags[ind-1] = tag
+        
     # Compute accuracy for each input clustering indexes file
     print('Computing accuracy...')
     outAcc = [[] for _ in indexes]

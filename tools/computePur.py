@@ -14,14 +14,17 @@ text = '''
 def compute(fileIn, tags):
     # Read clustering results
     results = []
+    # Number of alignment results
+    nTags = len(tags)
     with open(fileIn, 'r') as f:
         for i, text in enumerate(f.readlines()):
-            text = text.strip()
-            content = text.split(',')
             # The second element of each line is the output clustering index of the algorithms.
-            cluster = int(content[1])
+            ind, cluster = map(int, text.strip().split(','))
             # Save these pairs in a list.
-            results.append((tags[i], cluster))
+            if ind >= nTags:
+                break
+            if tags[ind-1] != -1:
+                results.append((tags[ind-1], cluster))
 
     # Sort the result according to the clustering index and get the max index number of clusters that algorithms output.
     results = sorted(results, key=lambda k: k[1])
@@ -46,8 +49,8 @@ def compute(fileIn, tags):
         for tag in tags:
             if tagNums[tag] > maxNum:
                 maxNum = tagNums[tag]
-        cnt += maxNum
-    acc = cnt / len(results)
+        cnt += maxNum/len(cluster)
+    acc = cnt / len(clusters)
     return acc
 
 if __name__ == '__main__':
@@ -76,11 +79,11 @@ if __name__ == '__main__':
     indexes = args[1:-1]
     outfile = args[-1]
 
-    tags = []
-    with open(labeled, 'r') as f:
-        for text in tqdm(f.readlines()):
-            ind, tag = map(int, text.strip().split(','))
-            tags.append(tag)
+    lines = open(labeled, 'r').readlines()
+    tags = [0 for _ in range(int(lines[-1].split(',')[0]))]
+    for text in tqdm(lines):
+        ind, tag = map(int, text.strip().split(','))
+        tags[ind-1] = tag
 
     # Compute accuracy for each input clustering indexes file
     print('Computing accuracy...')

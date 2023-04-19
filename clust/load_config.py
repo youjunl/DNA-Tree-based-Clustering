@@ -9,7 +9,6 @@ import getopt
 import sys
 
 config_dict={
-    "read_len" : 152,
     "end_tree_len" : 21,
     "tree_threshold" : 5,
     "h_index_nums" : 0,
@@ -18,9 +17,11 @@ config_dict={
     "reduce_size": 2,
     "spliter": False,
     "filter": False,
+    "use_index": False,
+    "index_file": ''
 }
 
-opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-h',['help','multi-stage','enable-spliter'])
+opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-F:-h',['help','multi-stage','enable-spliter'])
 
 #Read input info
 def load_json(path):
@@ -59,10 +60,11 @@ Options:
 -P number of processors
 -S number of extra stages of clustering
 -R reduce size
+-F index file path
 --multi-stage enable multistage clustering 
 '''
 def out_put_config():
-    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-h',['help','multi-stage','enable-spliter'])
+    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-F:-h',['help','multi-stage','enable-spliter'])
 
     for opt_name,opt_value in opt :
         if '-h' in opt_name or '--help' in opt_name:
@@ -82,6 +84,9 @@ def out_put_config():
             config_dict['extra_stage_num'] = int(opt_value)
         if '-R' in opt_name:
             config_dict['reduce_size'] = int(opt_value)
+        if '-F' in opt_name:
+            config_dict['index_file'] = opt_value
+            config_dict['use_index'] = True
         if 'multi-stage' in opt_name:
             config_dict['multi_stage'] = True
             if 'extra_stage_num' not in config_dict.keys():

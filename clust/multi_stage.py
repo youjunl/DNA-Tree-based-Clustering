@@ -118,7 +118,7 @@ def ssc_repeat(indexList, dnaData, read_len, tree_threshold, filter=False, split
         # Clustering with Tree Structure
         seedStr = maxSeed
         align = tree.fuzz_fin(seedStr[:read_len], tree_threshold)
-        if sum(align[1]) < tree_threshold:
+        if align[1] < tree_threshold:
             if filter:
                 # Prefiltering with LCS
                 # print('%s Merge To %s Err: %d'%(seedStr[-tree_depth:], readMap[align[0]], sum(align[1])))

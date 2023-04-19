@@ -1,23 +1,26 @@
 class Node:
     def __init__(self) -> None:
-        self.node_nums = 4
-        self.children = [None for _ in range(self.node_nums)]
-        self.isEnd = False   
+        self.node_num = 4
+        self.children = [None for _ in range(self.node_num)]
+        self.isEnd = False
         self.singleBranch = True
+
 class Trie:
     def __init__(self):
-        self.dna_dict = {"A":0,"T":1,"G":2,"C":3}
+        self.dna_dict = {"A": 0, "T": 1, "G": 2, "C": 3}
+        self.dna_dict_inv = {0: "A", 1: "T", 2: "G", 3: "C"}
         self.node_nums = 4
-        self.maxOptimDepth = 3
-        self.minTerminate = 9
+        self.prev_num = 2
+        self.maxOptimDepth = 4
+        self.minTerminate = 14
         self.children = [None for _ in range(self.node_nums)]
         self.isEnd = False
         self.singleBranch = False
 
-    def insert(self, word: str,label:str) -> None:
+    def insert(self, word: str, label: str) -> None:
         node = self
-        dict=self.dna_dict
-        for ch in word:
+        dict = self.dna_dict
+        for i, ch in enumerate(word):
             ch = dict[ch]
             if not node.children[ch]:
                 node.children[ch] = Node()
@@ -27,9 +30,9 @@ class Trie:
                 node.singleBranch = False
         node.isEnd = label
 
-    def delete(self,word:str):
+    def delete(self, word: str):
         node = self
-        dict=self.dna_dict
+        dict = self.dna_dict
         for ch in word:
             ch = dict[ch]
             if not node.children[ch]:
@@ -37,205 +40,85 @@ class Trie:
             node = node.children[ch]
         node.isEnd = False
 
-    def fuzz_align_normal(self, dnaInfo):
-        word, e = dnaInfo
-        currentErr = sum(e)
-        node = self 
-        tmp_list=[]
-        sub_list=[]
-        ins_list=[]
-        del_list=[]
-        len_=len(word)
+    def fuzz_align(self, word, node, depth, max_value, memory, prev=''):
+        # Exceed edit threshold
+        if min(memory) > max_value:
+            return False
 
-        for num, ch in enumerate(word) :
-            chNum = self.dna_dict[ch]
-            if False:#node.singleBranch and num > self.minTerminate:
-                tmp_list=[i for i in range(self.node_nums) if node.children[i]]
-                node = node.children[tmp_list[0]]
+        # Traverse to the end, return the cluster index and error number
+        if node.isEnd != False:
+            return [node.isEnd, memory[max_value]]
 
-            elif not node.children[chNum]:
-                # Collect existed node
-                tmp_list=[i for i in range(self.node_nums) if node.children[i]]                
-                maxOptimDepth = self.maxOptimDepth
-                traverseNum = min(len_-num-1, maxOptimDepth)
-                for k in tmp_list:
-                    #Deletion
-                    depth = 0
-                    tmp = node.children[k]
-                    while depth < traverseNum:
-                        if not tmp.children[self.dna_dict[word[num+depth]]]:
-                            break
-                        tmp = tmp.children[self.dna_dict[word[num+depth]]]
-                        depth += 1
+        chNum = self.dna_dict[word[depth]]
 
-                    if depth == traverseNum:
-                        del_list.append(k)
-
-                    #Insertion
-                    if len(ins_list) == 0:
-                        depth = 0
-                        tmp = node
-                        while depth < traverseNum-1:
-                            if not tmp.children[self.dna_dict[word[num+depth+1]]]:
-                                break
-                            tmp = tmp.children[self.dna_dict[word[num+depth+1]]]
-                            depth += 1
-                        
-                        if depth == traverseNum-1:
-                            ins_list.append(k)                     
-
-                    #Substitution
-                    depth = 0
-                    tmp = node.children[k]
-                    while depth < traverseNum:                                                
-                        if not tmp.children[self.dna_dict[word[num+depth+1]]]:
-                            break
-                        tmp = tmp.children[self.dna_dict[word[num+depth+1]]]
-                        depth += 1
-
-                    if depth == traverseNum:
-                        sub_list.append(k)
-
-                return [num, ins_list, del_list, sub_list]
-
+        # Update memory
+        if depth < max_value:
+            memory[max_value - depth - 1] = depth + 1
+            memory[max_value + depth + 1] = depth + 1
+        inp = word[max(0, depth + 1 - max_value):depth + 1]
+        # If node exist
+        if node.children[chNum]:
+            out = prev
+            out += self.dna_dict_inv[chNum]
+            new_memory = self.update_memory(memory, inp, out, max_value)
+            result = self.fuzz_align(word, node.children[chNum], depth + 1, max_value, new_memory, out)
+            # If traverse fail, try other nodes
+            if result == False:
+                for tmp_chNum, tmp_node in enumerate(node.children):
+                    if tmp_node and tmp_chNum != chNum:
+                        out = prev
+                        out += self.dna_dict_inv[tmp_chNum]
+                        new_memory = self.update_memory(memory, inp, out, max_value)
+                        result = self.fuzz_align(word, tmp_node, depth + 1, max_value, new_memory, out)
+                        if result:
+                            return result # Find a matching branch
+                return False  # Cannnot find a branch
             else:
-                node = node.children[chNum]
-
-        if type(node.isEnd) == int:
-            return node.isEnd
-
-        elif type(node.isEnd) == bool:
-            tmp_list=[i for i in range(self.node_nums) if node.children[i]]
-            return [num, [], tmp_list, []]
-
-    def fuzz_align_sensitive(self, dnaInfo):
-        word, e = dnaInfo
-        currentErr = sum(e)
-        node = self 
-        tmp_list=[]
-        sub_list=[]
-        ins_list=[]
-        del_list=[]
-        len_=len(word)
-
-        for num, ch in enumerate(word) :
-            chNum = self.dna_dict[ch]
-            if not node.children[chNum]:
-                # Collect existed node
-                tmp_list=[i for i in range(self.node_nums) if node.children[i]]                
-                maxOptimDepth = self.maxOptimDepth
-                traverseNum = min(len_-num-1, maxOptimDepth)
-                for k in tmp_list:
-                    #Deletion
-                    depth = 0
-                    tmp = node.children[k]
-                    while depth < traverseNum:
-                        if not tmp.children[self.dna_dict[word[num+depth]]]:
-                            break
-                        tmp = tmp.children[self.dna_dict[word[num+depth]]]
-                        depth += 1
-
-                    if depth == traverseNum or num - 2*(currentErr - traverseNum + depth) > 0:
-                        del_list.append(k)
-
-                    #Insertion
-                    if len(ins_list) == 0:
-                        depth = 0
-                        tmp = node
-                        while depth < traverseNum-1:
-                            if not tmp.children[self.dna_dict[word[num+depth+1]]]:
-                                break
-                            tmp = tmp.children[self.dna_dict[word[num+depth+1]]]
-                            depth += 1
-                        
-                        if depth == traverseNum-1 or num - 2*(currentErr - traverseNum + depth) > 2:
-                            ins_list.append(k)                     
-
-                    #Substitution
-                    depth = 0
-                    tmp = node.children[k]
-                    while depth < traverseNum:                                                
-                        if not tmp.children[self.dna_dict[word[num+depth+1]]]:
-                            break
-                        tmp = tmp.children[self.dna_dict[word[num+depth+1]]]
-                        depth += 1
-
-                    if depth == traverseNum or num - 2*(currentErr - traverseNum + depth) > 2:
-                        sub_list.append(k)
-
-                return [num, ins_list, del_list, sub_list]
-
-            else:
-                node = node.children[chNum]
-
-        if type(node.isEnd) == int:
-          return node.isEnd
-
-        elif type(node.isEnd) == bool:
-          tmp_list=[i for i in range(self.node_nums) if node.children[i]]
-          return [num, [], tmp_list, []]
-
-    def fuzz_fin(self, word, max_value, mode = 0):
-        queue = []
-        queue.append([word,[0, 0, 0]])        
-        output=["",[100, 100, 100]]
-        minOutputSum = 300
-        num2dnaDict = {0: 'A', 1: 'T', 2: 'G', 3: 'C'}
-        adjacent = []
-        adjacentList = []
-        if mode == 0:
-            alignFunc = self.fuzz_align_normal
+                return result  # Found matching branch
         else:
-            alignFunc = self.fuzz_align_sensitive
-        while True :
-            if sum(output[1]) == 0 or queue == []:
-                break
+            for tmp_chNum, tmp_node in enumerate(node.children):
+                if tmp_node:
+                    out = prev
+                    out += self.dna_dict_inv[tmp_chNum]
+                    new_memory = self.update_memory(memory, inp, out, max_value)
+                    result = self.fuzz_align(word, tmp_node, depth + 1, max_value, new_memory, out)
+                    if result != False:
+                        return result
+            return False  # Cannnot find a branch
 
-            word, errorNums = queue.pop(0)
-            errorSum = sum(errorNums)
-            if errorSum > max_value or errorSum > minOutputSum:
-              # Current number of error is larger than the threshold
-                continue
+    def update_memory(self, memory, inp, out, max_value):
+        new_memory = memory.copy()
+        if len(out) >= max_value:
+            new_memory[0] = min(memory[0] + int(out[-1] != inp[0]), memory[1] + 1)
+            new_memory[-1] = min(memory[-1] + int(out[-max_value] != inp[-1]), memory[-2] + 1)
+            for i in range(1, max_value):
+                delta = int(out[-1] != inp[i - 1])
+                new_memory[i] = min(new_memory[i - 1] + 1, memory[i] + delta, memory[i + 1] + 1)
+                j = -i - 1
+                delta = int(out[-i] != inp[-1])
+                new_memory[j] = min(new_memory[j + 1] + 1, memory[j] + delta, memory[j - 1] + 1)
 
-            result = alignFunc([word, errorNums])
+        else:
+            offset = max_value - len(out)
+            for i in range(offset + 1, max_value):
+                delta = int(out[-1] != inp[i - offset - 1])
+                new_memory[i] = min(new_memory[i - 1] + 1, memory[i] + delta, memory[i + 1] + 1)
+                j = -i - 1
+                delta = int(out[i - offset - 1] != inp[-1])
+                new_memory[j] = min(new_memory[j + 1] + 1, memory[j] + delta, memory[j - 1] + 1)
 
-            if type(result) == int:
-                adjacent.append([result, errorNums])
-                adjacentList.append(result)
-                errorSum = sum(errorNums)
-                if errorSum < minOutputSum :
-                    output=[result, errorNums]
-                    minOutputSum = errorSum
+        delta = int(out[-1] != inp[-1])
+        new_memory[max_value] = min(memory[max_value] + delta, memory[max_value - 1] + 1, memory[max_value + 1] + 1)
+        return new_memory
 
-            elif result[0] == len(word)-1:
-                for i in range(len(result[1])):
-                    chNum = result[1][i]
-                    k = word[:result[0]]+num2dnaDict[chNum]
-                    errorNums[1] += 1
-                    queue.append([k,errorNums])
-
-            else:
-                pos, ins_list, del_list, sub_list = result
-                insErr, delErr, subErr = errorNums
-
-                # Insertion Fix
-                if len(ins_list) > 0:
-                    k = word[:result[0]]+word[result[0]-len(word)+1:]+'A'
-                    errorList = [insErr+1, delErr, subErr]
-                    queue.append([k,errorList])
-
-                # Deletion Fix
-                for chNum in del_list:
-                    k = word[:pos]+num2dnaDict[chNum]+word[pos-len(word):]
-                    k = k[:len(word)]
-                    errorList = [insErr, delErr+1, subErr]
-                    queue.append([k,errorList])
-
-                # Substitution Fix
-                for chNum in sub_list:
-                    k = word[:pos]+num2dnaDict[chNum]+word[pos-len(word)+1:]
-                    errorList = [insErr, delErr, subErr+1]
-                    queue.append([k,errorList])
-                    
-        output.append(adjacent)
-        return output
+    def fuzz_fin(self, inData, max_value, tree_depth=16):
+        word = inData[:tree_depth]
+        node = self
+        memory = [1000 for _ in range(int(2 * max_value + 1))]
+        memory[max_value] = 0
+        depth = 0
+        result = self.fuzz_align(word, node, depth, max_value, memory, prev='')
+        if result == False:
+            return ["", 1000]
+        else:
+            return result
