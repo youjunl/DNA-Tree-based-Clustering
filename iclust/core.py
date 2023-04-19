@@ -1,5 +1,6 @@
 import random
 import multiprocessing as mp
+from multiprocessing.dummy import Pool as ThreadPool
 from tqdm import tqdm
 num_to_dna = {0: 'A', 1: 'T', 2: 'G', 3: 'C'}
 dna_to_num = {'A': 0, 'T': 1, 'G': 2, 'C': 3}
@@ -82,8 +83,12 @@ class Process():
             C = [[] for _ in range(core)]
             for cluster in S:
                 C[random.randint(0, core-1)].append(cluster)
-            for in_clusters in C:
-                self.compute_local(in_clusters)
+            with ThreadPool(params['thread']) as pool:
+                pool.map(self.compute_local, C)
+                pool.close()
+                pool.join()
+            # for in_clusters in C:
+            #     self.compute_local(in_clusters)
             S = []
             for out_clusters in C:
                 S.extend(out_clusters)
