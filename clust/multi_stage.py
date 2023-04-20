@@ -1,5 +1,5 @@
 from clust import tree as tr
-from clust import chainer_lcs
+from tqdm import tqdm
 dna_to_num = {'A':0,'C':1,'G':2,'T':3}
 num_to_dna = {0:'A',1:'C',2:'G',3:'T'}
 
@@ -25,8 +25,8 @@ def ssc(indexList, dnaData, read_len):
         _, read = pair
         clustInd, tag = indexList[i]
         clusters[tag-1].append(read)
-    seeds = []
-    seedMap = dict()
+    words = []
+    wordMap = dict()
     clusterMap = dict()
     for i, cluster in enumerate(clusters):
         # Skip empty clusters
@@ -36,30 +36,29 @@ def ssc(indexList, dnaData, read_len):
         # Record the frequencies of seeds
         freq = dict()
         for read in cluster:
-            seed = dna_to_seed(read[:read_len])
-            if seed not in freq.keys():
-                freq[seed] = 1
+            if read not in freq.keys():
+                freq[read] = 1
             else:
-                freq[seed] += 1
+                freq[read] += 1
         
         # Majority selection for the center seed
-        maxSeed = -1
+        maxRead = -1
         maxFreq = 0
         for k in freq.keys():
             if freq[k] > maxFreq:
                 maxFreq = freq[k]
-                maxSeed = k
-        if maxSeed == -1:
+                maxRead = k
+        if maxRead == -1:
             continue
         
         # Create a mapping
         clusterInd = i + 1
-        if maxSeed not in seeds:
-            seeds.append(maxSeed)
-            seedMap[maxSeed] = clusterInd # For merging the other clusters
+        if maxRead not in words:
+            words.append(maxRead)
+            wordMap[maxRead] = clusterInd # For merging the other clusters
             clusterMap[clusterInd] = clusterInd
         else:
-            clusterMap[clusterInd] = seedMap[maxSeed]
+            clusterMap[clusterInd] = wordMap[maxRead]
             
     for tag in set(tags):
         if tag not in clusterMap.keys():
@@ -68,7 +67,7 @@ def ssc(indexList, dnaData, read_len):
     newIndexList = []
     for clustInd, tag in indexList:
         newIndexList.append((clustInd, clusterMap[tag]))
-    tags = [index[1] for index in newIndexList]
+
     return newIndexList
 
 def ssc_repeat(indexList, dnaData, read_len, tree_threshold, filter=False, spliter=False):
@@ -79,32 +78,31 @@ def ssc_repeat(indexList, dnaData, read_len, tree_threshold, filter=False, split
         _, read = pair
         clustInd, tag = indexList[i]
         clusters[tag-1].append(read)
-    seedMap = dict()
+    wordMap = dict()
     clusterMap = dict()
-    readMap = dict()
     tree = tr.Trie()
-    for i, cluster in enumerate(clusters):
+    for i, cluster in enumerate(tqdm(clusters)):
         # Skip empty clusters
         if len(cluster) == 0:
             continue
         # Record the frequencies of seeds
         freq = dict()
         for read in cluster:
-            seed = read[:read_len]
-            if seed not in freq.keys():
-                freq[seed] = 1
+            word = read[:read_len]
+            if word not in freq.keys():
+                freq[word] = 1
             else:
-                freq[seed] += 1
+                freq[word] += 1
         
         # Majority selection for the center seed
-        maxSeed = -1
+        maxRead = -1
         maxFreq = 0
         for k in freq.keys():
             if freq[k] > maxFreq:
                 maxFreq = freq[k]
-                maxSeed = k
+                maxRead = k
 
-        if maxSeed == -1:
+        if maxRead == -1:
             continue
 
         if spliter:
@@ -116,8 +114,7 @@ def ssc_repeat(indexList, dnaData, read_len, tree_threshold, filter=False, split
         clusterInd = i + 1
 
         # Clustering with Tree Structure
-        seedStr = maxSeed
-        align = tree.fuzz_fin(seedStr[:read_len], tree_threshold)
+        align = tree.search(maxRead[:read_len], tree_threshold, read_len)
         if align[1] < tree_threshold:
             if filter:
                 # Prefiltering with LCS
@@ -125,8 +122,8 @@ def ssc_repeat(indexList, dnaData, read_len, tree_threshold, filter=False, split
                 pass
             clusterMap[clusterInd] = align[0] # Merging
         else:
-            tree.insert(seedStr[:read_len], clusterInd)
-            seedMap[maxSeed] = clusterInd # For merging the other clusters
+            tree.insert(maxRead[:read_len], clusterInd)
+            wordMap[maxRead] = clusterInd # For merging the other clusters
             clusterMap[clusterInd] = clusterInd
             # if filter:
             #     readMap[clusterInd] = seedStr[:read_len]

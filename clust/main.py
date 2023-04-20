@@ -5,6 +5,7 @@
 """
 import time
 import math
+import random
 from multiprocessing import Process, Manager, Queue, Pool
 from tqdm import tqdm
 from clust import load_config as lc
@@ -21,40 +22,37 @@ class SingleProcess():
         self.data = data
         self.tree = tr.Trie()
         self.indexList = []
-        self.test_num = 0
         self.clust_num = indexBegin + 0
         self.insertion = 0
         self.deletion = 0
         self.substitution = 0
-        self.chCnt = 0
-
+        self.branch_num = 0
     def cluster(self, dna_tag, dna_str):
-        self.chCnt += len(dna_str)
         if self.h_index == 0:
             dna_str = dna_str[:self.read_len]
         else:
             dna_str = dna_str[self.h_index:self.h_index+self.read_len]
 
-        align_result = self.tree.fuzz_fin(
+        align_result = self.tree.search(
             dna_str, self.config_dict['tree_threshold'], self.read_len)
 
         # If the match is successful, it is recorded.
-        if align_result[1] < self.config_dict['tree_threshold']:
+        if align_result[0] and align_result[1] < self.config_dict['tree_threshold']:
             self.indexList.append((dna_tag, align_result[0]))
 
         else:
             self.clust_num += 1
-            self.tree.insert(dna_str[:self.config_dict['end_tree_len']], str(self.clust_num))
+            self.branch_num += 1
+            self.tree.insert(dna_str[:self.read_len], self.clust_num)
             self.indexList.append((dna_tag, self.clust_num))
 
     def cluster_with_index(self, dna_tag, dna_str):
-        self.chCnt += len(dna_str)
         if self.h_index == 0:
             dna_str = dna_str[:self.read_len]
         else:
             dna_str = dna_str[self.h_index:self.h_index+self.read_len]
 
-        align_result = self.tree.fuzz_fin(
+        align_result = self.tree.search(
             dna_str, self.config_dict['tree_threshold'], self.read_len)
 
         # If the match is successful, it is recorded.
@@ -63,8 +61,23 @@ class SingleProcess():
 
         else:
             self.clust_num += 1
-            self.tree.insert(dna_str[:self.config_dict['end_tree_len']], str(self.clust_num))
+            self.branch_num += 1
+            self.tree.insert(dna_str[:self.read_len], self.clust_num)
             self.indexList.append((dna_tag, self.clust_num))
+
+    def train(self, train_size=200):
+        print('Training...')
+        samples = random.sample(self.data, max(train_size, len(self.data)))
+
+        for _, seq in tqdm(samples):
+            result = self.tree.search(seq[:self.read_len], self.config_dict['tree_threshold'], self.read_len, train=True)
+            if result[0] == "":
+                self.clust_num += 1
+                self.tree.insert(seq[:self.read_len], self.clust_num)
+                self.branch_num += 1
+            elif result[1] > 0:
+                self.tree.delete(result[2])
+                self.branch_num -= 1
 
     def run(self):
         if self.config_dict['use_index']:
@@ -72,11 +85,16 @@ class SingleProcess():
                 for line in f.readlines():
                     seq = line.strip()
                     self.clust_num += 1
-                    self.tree.insert(seq[:self.read_len], str(self.clust_num))
+                    self.tree.insert(seq, self.clust_num)
+                self.read_len = len(seq)
+
             for tag, read in tqdm(self.data):
                 self.cluster_with_index(tag, read)
 
         else:
+            # Train clustering model
+            self.train()
+            # Clustering
             for tag, read in tqdm(self.data):
                 self.cluster(tag, read)
 
@@ -141,12 +159,13 @@ if __name__ == '__main__':
         filterFlag = config_dict["filter"]
         for i in range(stageNum):
             indexList = ssc_repeat(indexList, data, tree_depth, tree_threshold, filter=filterFlag, spliter=spliterFlag)
-            tree_depth -= 2
+            tree_threshold += 2
             print('st %d'%(i+2))
+
     print('Time: %f'%(time.time()-st))
     if 'output_file' in config_dict:
         output_file = open(config_dict['output_file'], 'w')
         output_file.truncate(0)
-        for result in indexList:
-            output_file.write(str(result[0]) + ',' + str(result[1]) + '\n')
+        for pair in indexList:
+            output_file.write(str(pair[0]) + ',' + str(pair[1]) + '\n')
         output_file.close()

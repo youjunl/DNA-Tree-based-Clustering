@@ -17,15 +17,11 @@ def compute(fileIn, tags, clustNum, gamma):
     # Read clustering results
     results = []
 
-    # Number of alignment results
-    nTags = len(tags)
     with open(fileIn, 'r') as f:
         for i, text in enumerate(f.readlines()):
             # The second element of each line is the output clustering index of the algorithms.
             ind, cluster = map(int, text.strip().split(','))
             # Save these pairs in a list.
-            if ind >= nTags:
-                break
             if tags[ind-1] != -1:
                 results.append((tags[ind-1], cluster))
             
@@ -56,14 +52,19 @@ def compute(fileIn, tags, clustNum, gamma):
         score[tag-1] = max(score[tag-1], len(cluster))
 
     # Compute accuracy under different gammas.
+
     acc = [0 for _ in gamma]
-    
     for i, g in enumerate(gamma):
         cnt = 0
         for tag in clustNum.keys():
             if score[tag-1] / clustNum[tag] >= g:
                 cnt += 1
         acc[i] = cnt / nClust
+
+    # compare = [(tag, clustNum[tag], score[tag - 1], clustNum[tag] - score[tag - 1]) for tag in clustNum.keys()]
+    # compare = sorted(compare, key=lambda k: k[0])
+    # [print(tmp) for tmp in compare]
+    print('Num cluster: %d. Inp cluster: %d'%(len(clustNum.keys()), len(clusters)))
     return acc
 
 if __name__ == '__main__':
@@ -93,7 +94,7 @@ if __name__ == '__main__':
     outfile = args[-1]
 
     # Set range of gamma
-    gamma = [i*0.02 for i in range(20, 51)]
+    gamma = [i*0.1 for i in range(0, 11)]
     acc = [0] * len(gamma)
 
     # Count frequencies of tags in the labeled data.

@@ -21,8 +21,6 @@ def compute(fileIn, tags):
             # The second element of each line is the output clustering index of the algorithms.
             ind, cluster = map(int, text.strip().split(','))
             # Save these pairs in a list.
-            if ind >= nTags:
-                break
             if tags[ind-1] != -1:
                 results.append((tags[ind-1], cluster))
 
