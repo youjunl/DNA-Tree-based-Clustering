@@ -62,12 +62,11 @@ int         count_nodes (trie_t*);
 void        destroy_tower (gstack_t **);
 void        destroy_trie (trie_t*, int, void(*)(void *));
 void     ** insert_string_wo_malloc (trie_t *, const char *, node_t **);
-node_t     ** insert_string (trie_t*, const char*, int);
+void        insert_string (trie_t*, const char*, int);
 gstack_t *  new_gstack (void);
 gstack_t ** new_tower (int);
 trie_t   *  new_trie (unsigned int);
 int         push (void*, gstack_t**);
-// int         search (trie_t*, const char*, int, gstack_t**, int, int);
 result_t *search(trie_t *, const char *, int);
 struct trie_t
 {
@@ -85,17 +84,9 @@ struct node_t
    int label = 0;              // Lable on the leaf
 };
 
-struct gstack_t
-{
-   size_t    nslots;                // Stack size.
-   size_t    nitems;                // Number of items.
-   void    * items[];               // Items as 'void' pointers.
-};
-
 struct info_t
 {
    unsigned int         height;     // Critical depth with all hits.
-   struct   gstack_t ** pebbles;    // White pebbles for the search.
 };
 
 struct result_t
