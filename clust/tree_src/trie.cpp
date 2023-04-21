@@ -1,5 +1,4 @@
 #include "trie.h"
-#include <pybind11/pybind11.h>
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 
@@ -61,34 +60,24 @@ static const int altranslate[256] = {
 };
 
 struct arg_t {
-   char        tau;
-   char        maxtau;
+   int         tau;
    int       * query;
    int         height;
-   int         err;
 };
 
-void dash(node_t *, const int *, struct arg_t);
-void destroy_from(node_t *, void (*)(void *), int, int, int);
 int get_height(trie_t *);
-void init_pebbles(node_t *);
 node_t *insert(node_t *, int);
-node_t *insert_wo_malloc(node_t *, int, node_t *);
 node_t *new_trienode(void);
 result_t *poucet(node_t *, int, struct arg_t);
-int recursive_count_nodes(node_t *node, int, int);
 
 // Globals.
 int ERROR = 0;
 
-int get_height(trie_t *trie) { return trie->info->height; }
+int get_height(trie_t *trie) { return trie->height; }
 
 // ------  SEARCH FUNCTIONS ------ //
 
-result_t *search(
-    trie_t *trie,
-    const char *query,
-    const int tau)
+result_t *search(trie_t *trie, const char *query, const int tau)
 // SYNOPSIS:                                                              
 //   Front end query of a trie with the "poucet search" algorithm. Search 
 //   does not start from root. Instead, it starts from a given depth      
@@ -139,11 +128,15 @@ result_t *search(
    }
 
    // Set the search options.
-   struct arg_t arg = {
-        .tau     = tau,
-        .query   = translated,
-        .height  = height,
-   };
+   // struct arg_t arg = {
+   //      .tau     = tau,
+   //      .query   = translated,
+   //      .height  = height,
+   // };
+   struct arg_t arg;
+   arg.tau = tau;
+   arg.query = translated;
+   arg.height = height;
     
    node_t *start_node = trie->root;
    return poucet(start_node, 1, arg);;
@@ -289,9 +282,7 @@ result_t * poucet(
 
 // ------  TRIE CONSTRUCTION AND DESTRUCTION  ------ //
 
-trie_t *
-new_trie(
-    unsigned int height)
+trie_t * new_trie(unsigned int height)
 // SYNOPSIS:                                                              
 //   Front end trie constructor.                                          
 //                                                                        
@@ -323,27 +314,15 @@ new_trie(
       return NULL;
    }
 
-   info_t *info = new info_t;
-   if (info == NULL) {
-      fprintf(stderr, "error: could not create trie\n");
-      ERROR = __LINE__;
-      free(root);
-      free(trie);
-      return NULL;
-   }
-
    // Set the values of the meta information.
-   info->height = height;
-
    trie->root = root;
-   trie->info = info;
+   trie->height = height;
 
    return trie;
 
 }
 
-node_t *
-new_trienode(void)
+node_t * new_trienode(void)
 // SYNOPSIS:                                                              
 //   Back end constructor for a trie node. All values are initialized to  
 //   null, except the cache for dynamic programming which is initialized  
@@ -368,11 +347,7 @@ new_trienode(void)
 
 }
 
-void
-insert_string(
-    trie_t *trie,
-    const char *string,
-    int label)
+void insert_string(trie_t *trie, const char *string, unsigned int label)
 // SYNOPSIS:                                                              
 //   Front end function to fill in a trie. Insert a string from root, or  
 //   simply return the node at the end of the string path if it already   
@@ -424,32 +399,30 @@ insert_string(
    return;
 }
 
-node_t *
-insert(
-    node_t *parent,
-    int position)
-// SYNOPSIS:                                                              
-//   Back end function to construct tries. Append a child to an existing  
-//   node at specifieid position.                                         
-//   NO CHECKING IS PERFORMED to make sure that this does not overwrite   
-//   an existings node child (causing a memory leak) or that 'c' is an    
-//   integer less than 5. Since 'insert' is called exclusiverly by        
-//   'insert_string' after a call to 'find_path', this checking is not    
-//   required. If 'insert' is called in another context, this check has   
-//   to be performed.                                                     
-//                                                                        
-// PARAMETERS:                                                            
-//   parent: the parent to append the node to                             
-//   position: the position of the child                                  
-//                                                                        
-// RETURN:                                                                
-//   The appended child node in case of success, 'NULL' otherwise.        
-//                                                                        
+node_t * insert(node_t *parent, int position)
+// SYNOPSIS:
+//   Back end function to construct tries. Append a child to an existing
+//   node at specifieid position.
+//   NO CHECKING IS PERFORMED to make sure that this does not overwrite
+//   an existings node child (causing a memory leak) or that 'c' is an
+//   integer less than 5. Since 'insert' is called exclusiverly by
+//   'insert_string' after a call to 'find_path', this checking is not
+//   required. If 'insert' is called in another context, this check has
+//   to be performed.
+//
+// PARAMETERS:
+//   parent: the parent to append the node to
+//   position: the position of the child
+//
+// RETURN:
+//   The appended child node in case of success, 'NULL' otherwise.
+//
 // NB: This function is not used by 'starcode()'.
 {
    // Initilalize child node.
    node_t *child = new_trienode();
-   if (child == NULL) {
+   if (child == NULL)
+   {
       fprintf(stderr, "error: could not insert node\n");
       ERROR = __LINE__;
       return NULL;
@@ -460,20 +433,4 @@ insert(
    parent->child[position] = child;
 
    return child;
-
-}
-
-PYBIND11_MODULE(tree, m)
-{
-   m.doc() = "Python binding for tree search algorithms";
-   namespace py = pybind11;
-   py::class_<trie_t>(m, "Tree");
-   py::class_<result_t>(m, "Result")
-      .def(py::init<>())
-      .def_readwrite("label", &result_t::label)
-      .def_readwrite("distance", &result_t::distance);
-
-   m.def("new_tree", &new_trie, "Construct tree");
-   m.def("search", &search, "Search in the tree");
-   m.def("insert", &insert_string, "Insert a string to the tree");
 }

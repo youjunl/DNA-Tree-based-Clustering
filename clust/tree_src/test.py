@@ -3,7 +3,6 @@ sys.path.append('build')
 import tree
 
 tr = tree.new_tree(8)
-print(tr)
 inputs = []
 inputs.append('ATTGCATA')
 inputs.append('ATTGCATA')
