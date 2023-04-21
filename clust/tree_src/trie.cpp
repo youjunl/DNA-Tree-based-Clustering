@@ -61,12 +61,9 @@ static const int altranslate[256] = {
 };
 
 struct arg_t {
-   // gstack_t ** hits;
-   // gstack_t ** pebbles;
    char        tau;
    char        maxtau;
    int       * query;
-   // int         seed_depth;
    int         height;
    int         err;
 };
@@ -83,7 +80,6 @@ int recursive_count_nodes(node_t *node, int, int);
 
 // Globals.
 int ERROR = 0;
-// gstack_t * const TOWER_TOP;
 
 int get_height(trie_t *trie) { return trie->info->height; }
 
@@ -144,21 +140,11 @@ result_t *search(
 
    // Set the search options.
    struct arg_t arg = {
-      //   .hits    = hits,
-      //   .pebbles = info->pebbles,
         .tau     = tau,
         .query   = translated,
-      //   .seed_depth    = seed_depth,
         .height  = height,
    };
-
-   // Run recursive search from cached nodes.
-   // gstack_t *pebbles = info->pebbles[start_depth];
-   // for (unsigned int i = 0 ; i < pebbles->nitems ; i++) {
-   //    node_t *start_node = (node_t *) pebbles->items[i];
-   //    poucet(start_node, start_depth + 1, arg);
-   // }
-   
+    
    node_t *start_node = trie->root;
    return poucet(start_node, 1, arg);;
 }
@@ -382,7 +368,7 @@ new_trienode(void)
 
 }
 
-node_t **
+void
 insert_string(
     trie_t *trie,
     const char *string,
@@ -405,7 +391,7 @@ insert_string(
       fprintf(stderr, "error: can only insert string of length %d\n",
             get_height(trie));
       ERROR = __LINE__;
-      return NULL;
+      return;
    }
    
    // Find existing path.
@@ -430,13 +416,12 @@ insert_string(
       {
          fprintf(stderr, "error: could not insert string\n");
          ERROR = __LINE__;
-         return NULL;
+         return;
       }
    }
    node->isEnd = true;
    node->label = label;
-   return node->child + translate[(int) string[nchar-1]];
-
+   return;
 }
 
 node_t *
@@ -478,9 +463,17 @@ insert(
 
 }
 
-PYBIND11_MODULE(tree)
+PYBIND11_MODULE(tree, m)
 {
    m.doc() = "Python binding for tree search algorithms";
    namespace py = pybind11;
+   py::class_<trie_t>(m, "Tree");
+   py::class_<result_t>(m, "Result")
+      .def(py::init<>())
+      .def_readwrite("label", &result_t::label)
+      .def_readwrite("distance", &result_t::distance);
+
    m.def("new_tree", &new_trie, "Construct tree");
+   m.def("search", &search, "Search in the tree");
+   m.def("insert", &insert_string, "Insert a string to the tree");
 }
