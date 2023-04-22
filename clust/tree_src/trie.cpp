@@ -69,7 +69,6 @@ int get_height(trie_t *);
 node_t *insert(node_t *, int);
 node_t *new_trienode(void);
 result_t *poucet(node_t *, int, struct arg_t);
-
 // Globals.
 int ERROR = 0;
 
@@ -128,11 +127,6 @@ result_t *search(trie_t *trie, const char *query, const int tau)
    }
 
    // Set the search options.
-   // struct arg_t arg = {
-   //      .tau     = tau,
-   //      .query   = translated,
-   //      .height  = height,
-   // };
    struct arg_t arg;
    arg.tau = tau;
    arg.query = translated;
@@ -142,10 +136,7 @@ result_t *search(trie_t *trie, const char *query, const int tau)
    return poucet(start_node, 1, arg);;
 }
 
-result_t * poucet(
-    node_t *node,
-    const int depth,
-    struct arg_t arg)
+result_t * poucet(node_t *node, const int depth, struct arg_t arg)
 // SYNOPSIS:                                                              
 //   Back end recursive "poucet search" algorithm. Most of the time is    
 //   spent in this function. The focus node sets the values of  an L-     
@@ -198,15 +189,6 @@ result_t * poucet(
 //   Same as 'search()', it modifies nodes of the trie and the node       
 //   array 'arg.hits' where hits are pushed.                              
 {
-   // If search faild, return -1, otherwise return the label on the leaf
-   result_t * result = new result_t;
-   // Reached height of the trie: it's a hit!
-   if (node->isEnd) {
-      result->label = node ->label;
-      char *pcache = node->cache + TAU;
-      result->distance = pcache[0];
-      return result;
-   }
    // This makes it easier to distinguish the part that goes upward,
    // with positive index and requiring the path, from the part that
    // goes horizontally, with negative index and requiring previous
@@ -242,16 +224,54 @@ result_t * poucet(
    }
 
    node_t *child;
-   for (int i = 0 ; i < 6 ; i++) {
-      // Skip if current node has no child at this position.
-      if ((child = node->child[i]) == NULL) continue;
-
+   result_t * result = new result_t;
+   int next_ind = arg.query[depth];
+   // If node exist for the query[depth]
+   if((child = node->child[next_ind]) != NULL)
+   {
       // Same remark as for parent cache.
       char local_cache[] = {9,8,7,6,5,4,3,2,1,0,1,2,3,4,5,6,7,8,9};
       
       char *ccache = depth == arg.height ? local_cache + 9 : child->cache + TAU;
       memcpy(ccache+1, common, TAU * sizeof(char));
 
+      // Horizontal arm of the L (need previous characters).
+      if (maxa > 0) {
+         // See comment above for initialization.
+         // This is the "PAD exeption" mentioned in the SYNOPSIS.
+         mmatch = ((path & 15) == PAD ? 0 : pcache[-maxa]) + (next_ind != arg.query[depth-maxa]);
+         shift = min(pcache[1-maxa], maxa+1) + 1;
+         ccache[-maxa] = min(mmatch, shift);
+         for (int a = maxa-1 ; a > 0 ; a--) {
+            mmatch = pcache[-a] + (next_ind != arg.query[depth-a]);
+            shift = min(pcache[1-a], ccache[-a-1]) + 1;
+            ccache[-a] = min(mmatch, shift);
+         }
+      }
+      // Center cell (need both arms to be computed).
+      mmatch = pcache[0] + (next_ind != arg.query[depth]);
+      shift = min(ccache[-1], ccache[1]) + 1;
+      ccache[0] = min(mmatch, shift);
+
+      // Reached height of the trie: it's a hit!
+      if (child->isEnd) {
+         result->label = child ->label;
+         result->distance = ccache[0];
+         return result;
+      }
+      result_t * tmp_result = poucet(child, depth+1, arg);
+      if(tmp_result->label != -1)return tmp_result;      
+   }
+
+   // If traversal fail or node not exists, try other nodes
+   for (int i = 0 ; i < 6 ; i++) {
+      // Skip if current node has no child at this position.
+      if (i == next_ind || (child = node->child[i]) == NULL) continue;
+      // Same remark as for parent cache.
+      char local_cache[] = {9,8,7,6,5,4,3,2,1,0,1,2,3,4,5,6,7,8,9};
+      
+      char *ccache = depth == arg.height ? local_cache + 9 : child->cache + TAU;
+      memcpy(ccache+1, common, TAU * sizeof(char));
 
       // Horizontal arm of the L (need previous characters).
       if (maxa > 0) {
@@ -274,6 +294,12 @@ result_t * poucet(
 
       // Stop searching if 'tau' is exceeded.
       if (ccache[0] > arg.tau) continue;
+      // Reached height of the trie: it's a hit!
+      if (child->isEnd) {
+         result->label = child ->label;
+         result->distance = ccache[0];
+         return result;
+      }
       result_t * tmp_result = poucet(child, depth+1, arg);
       if(tmp_result->label != -1)return tmp_result;      
    }
