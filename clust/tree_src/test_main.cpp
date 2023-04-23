@@ -9,16 +9,14 @@ int main()
 {
     cout << "Demo" << endl;
     vector<string> inp;
-    inp.push_back("ATTGCCCA");
-    inp.push_back("ATTGCCCA");
-    inp.push_back("CAGCAAAA");
-    inp.push_back("CAGCAAAA");
-    inp.push_back("ATTGACCA");
-    inp.push_back("ATCGCCCA");
-    
+    inp.push_back("ATTGCATA");
+    // inp.push_back("CCTGAACA");
+    // inp.push_back("CATGAACA");
+    // inp.push_back("AATCATCT");
+    inp.push_back("ATGACATT");
     // Create tree
     trie_t *tree = new_trie(8);
-    const int tau = 2;
+    const int tau = 6;
     int clust_ind = 1;
     for(size_t i=0; i<inp.size(); i++)
     {

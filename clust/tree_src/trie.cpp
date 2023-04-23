@@ -68,7 +68,8 @@ struct arg_t {
 int get_height(trie_t *);
 node_t *insert(node_t *, int);
 node_t *new_trienode(void);
-result_t *poucet(node_t *, int, struct arg_t);
+result_t *poucet(node_t *, int, int*, char*, struct arg_t);
+char * compute_ccache(char *, int *, int*, const int, const int);
 // Globals.
 int ERROR = 0;
 
@@ -77,53 +78,16 @@ int get_height(trie_t *trie) { return trie->height; }
 // ------  SEARCH FUNCTIONS ------ //
 
 result_t *search(trie_t *trie, const char *query, const int tau)
-// SYNOPSIS:                                                              
-//   Front end query of a trie with the "poucet search" algorithm. Search 
-//   does not start from root. Instead, it starts from a given depth      
-//   corresponding to the length of the prefix from the previous search.  
-//   Since initial computations are identical for queries starting with   
-//   the same prefix, the search can restart from there. Each call to     
-//   the function starts ahead and seeds pebbles for the next query.      
-//                                                                        
-// PARAMETERS:                                                            
-//   trie: the trie to query                                              
-//   query: the query as an ascii string                                  
-//   tau: the maximum edit distance                                       
-//   hits: a hit stack to push the hits                                   
-//   start_depth: the depth to start the search                           
-//   seed_depth: how deep to seed pebbles                                 
-//                                                                        
-// RETURN:                                                                
-//   A pointer to 'hits' node array.                                      
-//                                                                        
-// SIDE EFFECTS:                                                          
-//   The non 'const' parameters of the function are modified. The node    
-//   array can be resized (which is why the address of the pointers is    
-//   passed as a parameter) and the trie is modified by the trailinng of  
-//   effect of the search.                                                
 {
-   ERROR = 0;
-
    int height = get_height(trie);
    int length = strlen(query);
 
-
-   // // Make sure the cache is allocated.
-   // info_t *info = trie->info;
-
-   // // Reset the pebbles that will be overwritten.
-   // start_depth = max(start_depth, 0);
-   // for (int i = start_depth+1 ; i <= min(seed_depth, height) ; i++) {
-   //    info->pebbles[i]->nitems = 0;
-   // }
-
-   // Translate the query string. The first 'char' is kept to store
-   // the length of the query, which shifts the array by 1 position.
+   // Translate symbols to integers
    int translated[M];
-   translated[0] = length;
-   translated[length+1] = EOS;
-   for (int i = 0 ; i < length ; i++) {
-      translated[i+1] = altranslate[(int) query[i]];
+   translated[length] = EOS;
+   for (int i = 0; i < length; i++)
+   {
+      translated[i] = altranslate[(int)query[i]];
    }
 
    // Set the search options.
@@ -131,178 +95,128 @@ result_t *search(trie_t *trie, const char *query, const int tau)
    arg.tau = tau;
    arg.query = translated;
    arg.height = height;
-    
+
    node_t *start_node = trie->root;
-   return poucet(start_node, 1, arg);;
+   int out[length];
+   
+   // Initialize cache
+   char cache[2 * tau + 1];
+   for (int i = 0; i < 2 * tau + 1; i++)
+      cache[i] = MAX_TAU;
+   cache[tau] = 0;
+   return poucet(start_node, 0, out, cache, arg);
 }
 
-result_t * poucet(node_t *node, const int depth, struct arg_t arg)
-// SYNOPSIS:                                                              
-//   Back end recursive "poucet search" algorithm. Most of the time is    
-//   spent in this function. The focus node sets the values of  an L-     
-//   shaped section (but with the angle on the right side) of the dynamic 
-//   programming table for its children. One of the arms of the L is      
-//   identical for all the children and is calculated separately. The     
-//   rest is classical dynamic programming computed in the 'cache' struct 
-//   member of the children. The path of the last 8 nodes leading to the  
-//   focus node is encoded by a 32 bit integer, which allows to perform   
-//   dynamic programming without parent pointer.                          
-//
-//   All the leaves of the trie are at a the same depth called the   
-//   "height", which is the depth at which the recursion is stopped to    
-//   check for hits. If the maximum edit distance 'tau' is exceeded the   
-//   search is interrupted. On the other hand, if the search has passed   
-//   trailing depth and 'tau' is exactly reached, the search finishes by  
-//   a 'dash()' which checks whether an exact suffix can be found.        
-//   While trailing, the nodes are pushed in the g_stack 'pebbles' so     
-//   they can serve as starting points for future searches.               
-//
-//   Since not all the sequences have the same length, they are prefixed
-//   with the 'PAD' character (value 5, printed as white space) so that
-//   the total length is equal to the height of the trie. This imposes
-//   an important modification to the recursion, indicated by the label
-//   "PAD exception" on two different lines of the code below. Without
-//   this modification, "AAAAATA" and "AAAAA" would be aligned this way.
-//
-//                               AAAAATA
-//                               x||||x|
-//                               _AAAAAA
-//
-//   However, the best alignment is the following.
-//
-//                               AAAAATA
-//                               |||||x|
-//                               AAAAA_A
-//
-//   The solution is to initialize the alignment score to 0 whenever the
-//   padding character is met, which in effect is equivalent to ignoring
-//   starting the alignment after the PADs.
-//                                                                        
-// PARAMETERS:                                                            
-//   node: the focus node in the trie                                     
-//   depth: the depth of the children in the trie.                        
-//                                                                        
-// RETURN:                                                                
-//   'void'.                                                              
-//                                                                        
-// SIDE EFFECTS:                                                          
-//   Same as 'search()', it modifies nodes of the trie and the node       
-//   array 'arg.hits' where hits are pushed.                              
+char *compute_ccache(char *pcache, int *inp, int *out, const int depth, const int tau)
+{
+   const int n = 2 * tau + 1;
+   char *ccache = (char *)malloc(n);
+   int delta;
+   for (int i = 0; i < 2 * tau + 1; i++)
+      ccache[i] = pcache[i];
+   if (depth + 1 > tau)
+   {
+      ccache[0] = min(pcache[0] + (out[depth] != inp[0]), pcache[1] + 1);
+      ccache[n - 1] = min(pcache[n - 1] + (out[depth - tau] != inp[tau - 1]), pcache[n - 2] + 1);
+      for (int i = 1; i < tau; i++)
+      {
+         // Horizental arm
+         int hshift = min(ccache[i - 1] + 1, pcache[i + 1] + 1);
+         delta = out[depth] != inp[i - 1];
+         ccache[i] = min(pcache[i] + delta, hshift);
+         // Vertical arm
+         int j = n - i - 1;
+         int vshift = min(ccache[j + 1] + 1, pcache[j - 1] + 1);
+         delta = out[depth - tau + i] != inp[tau - 1];
+         ccache[j] = min(pcache[j] + delta, vshift);
+      }
+   }
+   else
+   {
+      int offset = tau - depth - 1;
+      for (int i = offset + 1; i < tau; i++)
+      {
+         // Horizental arm
+         int hshift = min(ccache[i - 1] + 1, pcache[i + 1] + 1);
+         delta = out[depth] != inp[i - offset - 1];
+         ccache[i] = min(pcache[i] + delta, hshift);
+         // Vertical arm
+         int j = n - i - 1;
+         int vshift = min(ccache[j + 1] + 1, pcache[j - 1] + 1);
+         delta = out[i - offset - 1] != inp[depth];
+         ccache[j] = min(pcache[j] + delta, vshift);
+      }
+   }
+   // Center cell
+   int shift = min(ccache[tau - 1] + 1, ccache[tau + 1] + 1);
+   if (depth + 1 > tau)
+      ccache[tau] = min(pcache[tau] + (out[depth] != inp[tau - 1]), shift);
+   else
+      ccache[tau] = min(pcache[tau] + (out[depth] != inp[depth]), shift);
+   // printf("curr: ");
+   // for (int i = 0; i < 2 * tau + 1; i++)
+   //    printf("%d ", ccache[i]);
+   // printf("\n");
+   return ccache;
+}
+
+result_t *poucet(node_t *node, const int depth, int *out, char *pcache, struct arg_t arg)
 {
    // This makes it easier to distinguish the part that goes upward,
    // with positive index and requiring the path, from the part that
    // goes horizontally, with negative index and requiring previous
    // characters of the query.
-   char *pcache = node->cache + TAU;
-   // Risk of overflow at depth lower than 'tau'.
-   int maxa = min((depth-1), arg.tau);
+   result_t *result = new result_t;
+   const int tau = arg.tau;
 
-   // Penalty for match/mismatch and insertion/deletion resepectively.
-   unsigned char mmatch;
-   unsigned char shift;
+   // Exceed threshold
+   if (pcache[tau] > tau || depth > arg.height)
+   {
+      result->distance = pcache[tau];
+      return result;
+   }
+ 
+   if (node->isEnd)
+   {
+      result->label = node->label;
+      result->distance = pcache[tau];
+      return result;
+   }
 
-   // Part of the cache that is shared between all the children.
-   char common[9] = {1,2,3,4,5,6,7,8,9};
-
-   // The branch of the L that is identical among all children
-   // is computed separately. It will be copied later.
-   int32_t path = node->path;
-   // Upper arm of the L (need the path).
-   if (maxa > 0) {
-      // Special initialization for first character. If the previous
-      // character was a PAD, there is no cost to start the alignment.
-      // This is the "PAD exeption" mentioned in the SYNOPSIS.
-      mmatch = (arg.query[depth-1] == PAD ? 0 : pcache[maxa]) +
-                  ((path >> 4*(maxa-1) & 15) != arg.query[depth]);
-      shift = min(pcache[maxa-1], common[maxa]) + 1;
-      common[maxa-1] = min(mmatch, shift);
-      for (int a = maxa-1 ; a > 0 ; a--) {
-         mmatch = pcache[a] + ((path >> 4*(a-1) & 15) != arg.query[depth]);
-         shift = min(pcache[a-1], common[a]) + 1;
-         common[a-1] = min(mmatch, shift);
-      }
+   // Update cache edge
+   if (depth < tau)
+   {
+      pcache[tau - depth - 1] = depth + 1;
+      pcache[tau + depth + 1] = depth + 1;
    }
 
    node_t *child;
-   result_t * result = new result_t;
+   int *inp = arg.query + max(0, depth + 1 - tau);
    int next_ind = arg.query[depth];
+
    // If node exist for the query[depth]
-   if((child = node->child[next_ind]) != NULL)
+   if ((child = node->child[next_ind]) != NULL)
    {
-      // Same remark as for parent cache.
-      char local_cache[] = {9,8,7,6,5,4,3,2,1,0,1,2,3,4,5,6,7,8,9};
-      
-      char *ccache = depth == arg.height ? local_cache + 9 : child->cache + TAU;
-      memcpy(ccache+1, common, TAU * sizeof(char));
-
-      // Horizontal arm of the L (need previous characters).
-      if (maxa > 0) {
-         // See comment above for initialization.
-         // This is the "PAD exeption" mentioned in the SYNOPSIS.
-         mmatch = ((path & 15) == PAD ? 0 : pcache[-maxa]) + (next_ind != arg.query[depth-maxa]);
-         shift = min(pcache[1-maxa], maxa+1) + 1;
-         ccache[-maxa] = min(mmatch, shift);
-         for (int a = maxa-1 ; a > 0 ; a--) {
-            mmatch = pcache[-a] + (next_ind != arg.query[depth-a]);
-            shift = min(pcache[1-a], ccache[-a-1]) + 1;
-            ccache[-a] = min(mmatch, shift);
-         }
-      }
-      // Center cell (need both arms to be computed).
-      mmatch = pcache[0] + (next_ind != arg.query[depth]);
-      shift = min(ccache[-1], ccache[1]) + 1;
-      ccache[0] = min(mmatch, shift);
-
-      // Reached height of the trie: it's a hit!
-      if (child->isEnd) {
-         result->label = child ->label;
-         result->distance = ccache[0];
-         return result;
-      }
-      result_t * tmp_result = poucet(child, depth+1, arg);
-      if(tmp_result->label != -1)return tmp_result;      
+      out[depth] = next_ind;
+      char * ccache = compute_ccache(pcache, inp, out, depth, tau);
+      result_t *tmp_result = poucet(child, depth + 1, out, ccache, arg);
+      if (tmp_result->label != -1)
+         return tmp_result;
    }
 
    // If traversal fail or node not exists, try other nodes
-   for (int i = 0 ; i < 6 ; i++) {
+   for (int i = 1; i < 5; i++)
+   {
       // Skip if current node has no child at this position.
-      if (i == next_ind || (child = node->child[i]) == NULL) continue;
-      // Same remark as for parent cache.
-      char local_cache[] = {9,8,7,6,5,4,3,2,1,0,1,2,3,4,5,6,7,8,9};
-      
-      char *ccache = depth == arg.height ? local_cache + 9 : child->cache + TAU;
-      memcpy(ccache+1, common, TAU * sizeof(char));
-
-      // Horizontal arm of the L (need previous characters).
-      if (maxa > 0) {
-         // See comment above for initialization.
-         // This is the "PAD exeption" mentioned in the SYNOPSIS.
-         mmatch = ((path & 15) == PAD ? 0 : pcache[-maxa]) +
-                     (i != arg.query[depth-maxa]);
-         shift = min(pcache[1-maxa], maxa+1) + 1;
-         ccache[-maxa] = min(mmatch, shift);
-         for (int a = maxa-1 ; a > 0 ; a--) {
-            mmatch = pcache[-a] + (i != arg.query[depth-a]);
-            shift = min(pcache[1-a], ccache[-a-1]) + 1;
-            ccache[-a] = min(mmatch, shift);
-         }
-      }
-      // Center cell (need both arms to be computed).
-      mmatch = pcache[0] + (i != arg.query[depth]);
-      shift = min(ccache[-1], ccache[1]) + 1;
-      ccache[0] = min(mmatch, shift);
-
-      // Stop searching if 'tau' is exceeded.
-      if (ccache[0] > arg.tau) continue;
-      // Reached height of the trie: it's a hit!
-      if (child->isEnd) {
-         result->label = child ->label;
-         result->distance = ccache[0];
-         return result;
-      }
-      result_t * tmp_result = poucet(child, depth+1, arg);
-      if(tmp_result->label != -1)return tmp_result;      
+      if (i == next_ind || (child = node->child[i]) == NULL)
+         continue;
+      out[depth] = i;
+      char * ccache = compute_ccache(pcache, inp, out, depth, tau);
+      result_t *tmp_result = poucet(child, depth + 1, out, ccache, arg);
+      if (tmp_result->label != -1)
+         return tmp_result;
    }
+   // There is no more node for traversal
    return result;
 }
 
@@ -397,7 +311,7 @@ void insert_string(trie_t *trie, const char *string, unsigned int label)
    
    // Find existing path.
    node_t *node = trie->root;
-   for (i = 0; i < nchar - 1; i++)
+   for (i = 0; i < nchar; i++)
    {
       node_t *child;
       int c = translate[(int)string[i]];
@@ -409,7 +323,7 @@ void insert_string(trie_t *trie, const char *string, unsigned int label)
    }
 
    // Append more nodes.
-   for (; i < nchar - 1; i++)
+   for (; i < nchar; i++)
    {
       int c = translate[(int)string[i]];
       node = insert(node, c);
@@ -453,10 +367,8 @@ node_t * insert(node_t *parent, int position)
       ERROR = __LINE__;
       return NULL;
    }
-   // Update child path and parent pointer.
-   child->path = (parent->path << 4) + position;
    // Update parent node.
+   child->ch_num = position;
    parent->child[position] = child;
-
    return child;
 }

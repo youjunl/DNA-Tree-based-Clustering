@@ -8,7 +8,7 @@
 
 #define DESTROY_NODES_YES 1
 #define DESTROY_NODES_NO 0
-
+#define MAX_TAU 255
 static const char BASES[8] = "ACGTN";
 
 struct info_t;
@@ -37,16 +37,16 @@ struct trie_t
 struct node_t
 {
    node_t *child[6] = {nullptr}; // Array of 6 children pointers.
-   uint32_t path;                // Encoded path end to the node.
    char cache[2 * TAU + 1];      // Dynamic programming space.
    bool isEnd = false;           // Indentifier of leaf
    unsigned int label = 0;       // Lable on the leaf
+   char ch_num;
 };
 
 struct result_t
 {
    int label = -1;      // return label
-   int distance = 1000; // edit distance
+   int distance = MAX_TAU; // edit distance
 };
 
 #endif
