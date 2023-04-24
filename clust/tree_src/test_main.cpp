@@ -10,10 +10,7 @@ int main()
     cout << "Demo" << endl;
     vector<string> inp;
     inp.push_back("ATTGCATA");
-    // inp.push_back("CCTGAACA");
-    // inp.push_back("CATGAACA");
-    // inp.push_back("AATCATCT");
-    inp.push_back("ATGACATT");
+    inp.push_back("ATTGCGAT");
     // Create tree
     trie_t *tree = new_trie(8);
     const int tau = 6;
@@ -21,7 +18,7 @@ int main()
     for(size_t i=0; i<inp.size(); i++)
     {
         const char *seq = inp[i].c_str();
-        result_t *tmp = search(tree, seq, tau);
+        result_t *tmp = quick_search(tree, seq, tau, 2);
         if (tmp->label < 0)
         {
             insert_string(tree, seq, clust_ind);

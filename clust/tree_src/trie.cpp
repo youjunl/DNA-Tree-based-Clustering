@@ -4,7 +4,7 @@
 
 #define PAD 5              // Position of padding nodes.
 #define EOS -1             // End Of String, for 'dash()'.
-
+using namespace std;
 // Translation table to insert nodes in the trie.
 //          ' ': PAD (5)
 //     'a', 'A': 1
@@ -65,17 +65,193 @@ struct arg_t {
    int         height;
 };
 
+
+struct item_t
+{
+   int distance;
+   int * query;
+};
+
+struct context_t
+{
+   int depth;
+   long label;
+   bool ins[4] = {false, false, false, false};
+   bool del[4] = {false, false, false, false};
+   bool sub[4] = {false, false, false, false};
+   bool error = false;
+};
+
 int get_height(trie_t *);
 node_t *insert(node_t *, int);
 node_t *new_trienode(void);
 result_t *poucet(node_t *, int, int*, char*, struct arg_t);
 char * compute_ccache(char *, int *, int*, const int, const int);
+context_t * context(trie_t *, int*, const int, const int);
+
 // Globals.
 int ERROR = 0;
 
 int get_height(trie_t *trie) { return trie->height; }
 
 // ------  SEARCH FUNCTIONS ------ //
+result_t *quick_search(trie_t *trie, const char *query, const int tau, const int max_depth)
+{
+   int height = get_height(trie);
+   int length = strlen(query);
+   // Translate symbols to integers
+   int translated[M];
+   translated[length] = EOS;
+   for (int i = 0; i < length; i++)
+   {
+      translated[i] = altranslate[(int)query[i]];
+   }
+   node_t *start_node = trie->root;
+   int out[length];
+
+   queue<item_t> q;
+   item_t input = {0, translated};
+
+   result_t *result = new result_t;
+
+   q.push(input);
+   while (true)
+   {
+      // If found perfect matched
+      if(result->distance==0)break;
+      
+      // If no candidate in queue
+      if(q.empty())break;
+
+      // Get a candidate input
+      item_t cur_input = q.front();
+      q.pop();
+
+      if(cur_input.distance>tau)continue;
+
+      context_t *context_out = context(trie, cur_input.query, height, max_depth);
+      if (context_out->error)
+      {
+         // Found unmatching during traversal
+         int pos = context_out->depth;
+         // Insertion fix
+         for(int i=0; i<4; i++)
+         {
+            if(!context_out->ins[i])continue;
+            int new_query[8];
+            item_t new_input = {cur_input.distance+1, new_query};
+            for(int j=0;j<pos-1;j++)new_query[j] = cur_input.query[j];
+            for(int j=pos;j<height;j++)new_query[j-1] = cur_input.query[j];
+            new_query[height] = 0; // Add a PAD to the end
+            q.push(new_input);          
+         }
+         // Deletion fix
+         for(int i=0; i<4; i++)
+         {
+            if(!context_out->del[i])continue;
+            int new_query[8];
+            item_t new_input = {cur_input.distance+1, new_query};
+            for(int j=0;j<pos;j++)new_query[j] = cur_input.query[j];
+            new_query[pos] = i+1;
+            for(int j=pos+1;j<height;j++)new_query[j] = cur_input.query[j-1];
+            q.push(new_input);
+         }
+         // Substitution fix
+         for(int i=0; i<4; i++)
+         {
+            if(!context_out->sub[i])continue;
+            int new_query[8];
+            item_t new_input = {cur_input.distance+1, new_query};
+            for(int j=0;j<pos;j++)new_query[j] = cur_input.query[j];
+            new_query[pos] = i+1;
+            for(int j=pos+1;j<height;j++)new_query[j] = cur_input.query[j];
+            q.push(new_input);
+         }
+      }
+      else
+      {
+         // Found an output
+         int cur_distance = cur_input.distance;
+         long cur_label = context_out->label;
+         if(result->distance>cur_distance)
+         {
+            result->label=cur_label;
+            result->distance=cur_distance;
+         }
+      }
+   }
+   return result;
+}
+
+context_t * context(trie_t *trie, int * query, const int height, const int max_depth)
+{
+   node_t *node = trie->root;
+   context_t *out = new context_t;
+   for(int i=0; i < height; i++)
+   {
+      int ch_num = query[i];
+      out->depth = i;
+      if(node->child[ch_num] == NULL)
+      {
+         out->error = true;
+         // Pretend overflow
+         int depth;
+         int search_depth = min(height-i-1, max_depth);
+         for(int node_num = 1; node_num<5; node_num++)
+         {
+            node_t *tmp_node;
+            if(node->child[node_num] != NULL)
+            {
+               // Deletion
+               depth = 0;
+               tmp_node = node->child[node_num];
+               while (depth<search_depth)
+               {
+                  if((tmp_node=tmp_node->child[query[i+depth]]) == NULL)break;
+                  depth++;
+               }
+               if (depth == search_depth)out->del[node_num - 1] = true;
+
+               // Insertion
+               depth = 0;
+               tmp_node = node;
+               while (depth<search_depth-1)
+               {
+                  if((tmp_node=tmp_node->child[query[i+depth+1]]) == NULL)break;
+                  depth++;
+               }
+               if (depth == search_depth-1)out->ins[node_num - 1] = true;
+
+               // Substitution
+               depth = 0;
+               tmp_node = node->child[node_num];
+               while (depth<search_depth)
+               {
+                  if((tmp_node=tmp_node->child[query[i+depth+1]]) == NULL)break;
+                  depth++;
+               }
+               if (depth == search_depth)out->sub[node_num - 1] = true;               
+            }
+         }
+         return out;
+      }
+      // If node exist, continue
+      else node = node->child[ch_num];
+   }
+   if(node->isEnd)out->label=node->label;
+   else if(!out->error)
+   {
+      // Error not found, but terminated early because of insertions
+      // Add a deletion flag to the end
+      out->error = true;
+      for(int node_num = 1; node_num<5; node_num++)
+      {
+         if(node->child[node_num] != NULL)out->del[node_num-1]=true;
+      } 
+   }
+   
+   return out;
+}
 
 result_t *search(trie_t *trie, const char *query, const int tau)
 {
@@ -153,10 +329,6 @@ char *compute_ccache(char *pcache, int *inp, int *out, const int depth, const in
       ccache[tau] = min(pcache[tau] + (out[depth] != inp[tau - 1]), shift);
    else
       ccache[tau] = min(pcache[tau] + (out[depth] != inp[depth]), shift);
-   // printf("curr: ");
-   // for (int i = 0; i < 2 * tau + 1; i++)
-   //    printf("%d ", ccache[i]);
-   // printf("\n");
    return ccache;
 }
 
@@ -287,7 +459,7 @@ node_t * new_trienode(void)
 
 }
 
-void insert_string(trie_t *trie, const char *string, unsigned int label)
+void insert_string(trie_t *trie, const char *string, long label)
 // SYNOPSIS:                                                              
 //   Front end function to fill in a trie. Insert a string from root, or  
 //   simply return the node at the end of the string path if it already   
@@ -371,4 +543,27 @@ node_t * insert(node_t *parent, int position)
    child->ch_num = position;
    parent->child[position] = child;
    return child;
+}
+
+void delete_string(trie_t *trie, const char*string)                                                            
+{
+   int i;
+   int nchar = strlen(string);   
+   // Find existing path.
+   node_t *node = trie->root;
+   for (i = 0; i < nchar; i++)
+   {
+      node_t *child;
+      int c = translate[(int)string[i]];
+      if ((child = (node_t *)node->child[c]) == NULL)
+      {
+         break;
+      }
+      node = child;
+   }
+   if(node->isEnd)
+   {
+      node->isEnd = false;
+   }
+   return;
 }

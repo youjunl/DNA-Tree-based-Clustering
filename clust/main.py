@@ -9,9 +9,9 @@ import random
 from multiprocessing import Process, Manager, Queue, Pool
 from tqdm import tqdm
 from clust import load_config as lc
-from clust import tree as tr
+from clust import pytree as tr
 from clust.multi_stage import ssc, ssc_repeat
-
+from clust import tree
 
 class SingleProcess():
 
@@ -20,7 +20,7 @@ class SingleProcess():
         self.h_index = self.config_dict["h_index_nums"]
         self.read_len = self.config_dict["end_tree_len"]
         self.data = data
-        self.tree = tr.Trie()
+        self.tree = tree.new_tree(self.read_len)
         self.indexList = []
         self.clust_num = indexBegin + 0
         self.insertion = 0
@@ -33,18 +33,20 @@ class SingleProcess():
         else:
             dna_str = dna_str[self.h_index:self.h_index+self.read_len]
 
-        align_result = self.tree.search(
-            dna_str, self.config_dict['tree_threshold'], self.read_len)
+        if len(dna_str) == self.read_len:
+            align_result = tree.search(self.tree, dna_str, self.config_dict['tree_threshold'])
+            label, distance = align_result.label, align_result.distance
+            # If the match is successful, it is recorded.
+            if label > 0 and distance < self.config_dict['tree_threshold']:
+                self.indexList.append((dna_tag, label))
 
-        # If the match is successful, it is recorded.
-        if align_result[0] and align_result[1] < self.config_dict['tree_threshold']:
-            self.indexList.append((dna_tag, align_result[0]))
-
+            else:
+                self.clust_num += 1
+                self.branch_num += 1
+                tree.insert(self.tree, dna_str, self.clust_num)
+                self.indexList.append((dna_tag, self.clust_num))
         else:
-            self.clust_num += 1
-            self.branch_num += 1
-            self.tree.insert(dna_str[:self.read_len], self.clust_num)
-            self.indexList.append((dna_tag, self.clust_num))
+            return
 
     def cluster_with_index(self, dna_tag, dna_str):
         if self.h_index == 0:
@@ -70,14 +72,14 @@ class SingleProcess():
         samples = random.sample(self.data, max(train_size, len(self.data)))
 
         for _, seq in tqdm(samples):
-            result = self.tree.search(seq[:self.read_len], self.config_dict['tree_threshold'], self.read_len, train=True)
-            if result[0] == "":
+            result = tree.search(self.tree, seq[:self.read_len], self.config_dict['tree_threshold'])
+            if result.label == -1:
                 self.clust_num += 1
-                self.tree.insert(seq[:self.read_len], self.clust_num)
+                tree.insert(self.tree, seq[:self.read_len], self.clust_num)
                 self.branch_num += 1
-            elif result[1] > 0:
-                self.tree.delete(result[2])
-                self.branch_num -= 1
+            # elif result.distance > 0:
+            #     self.tree.delete(result[2])
+            #     self.branch_num -= 1
 
     def run(self):
         if self.config_dict['use_index']:

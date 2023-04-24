@@ -36,11 +36,18 @@ if __name__=='__main__':
     tr = tree.new_tree(8)
     inputs = []
     inputs.append('ATTGCATA')
-    inputs.append('ATTGCATT')
+    inputs.append('ATTGCATT') # 1
+    inputs.append('ATTGCATA') # 0
+    inputs.append('ATCGCATA') # 1
+    inputs.append('ATGCATAT') # 2
+    inputs.append('ATTGCGAT') # 2
+    
     clust_ind = 1
     for inp in inputs:
         out = tree.search(tr, inp, 4)
+        out_quick = tree.quick_search(tr, inp, 4, 2)
         print('%s %d %d'%(inp, out.label, out.distance))
+        print('%s %d %d'%(inp, out_quick.label, out_quick.distance))
         if out.label < 0:
             tree.insert(tr, inp, clust_ind)
             clust_ind += 1
