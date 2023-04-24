@@ -9,7 +9,7 @@ import getopt
 import sys
 
 config_dict={
-    "end_tree_len" : 21,
+    "end_tree_len" : 8,
     "tree_threshold" : 3,
     "h_index_nums" : 0,
     "processes_nums" : 1,

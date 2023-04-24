@@ -140,9 +140,9 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
             if(!context_out->ins[i])continue;
             int new_query[8];
             item_t new_input = {cur_input.distance+1, new_query};
-            for(int j=0;j<pos-1;j++)new_query[j] = cur_input.query[j];
-            for(int j=pos;j<height;j++)new_query[j-1] = cur_input.query[j];
-            new_query[height] = 0; // Add a PAD to the end
+            for(int j=0;j<pos;j++)new_query[j] = cur_input.query[j];
+            for(int j=pos;j<height-1;j++)new_query[j] = cur_input.query[j+1];
+            new_query[height-1] = 0; // Add a PAD to the end
             q.push(new_input);          
          }
          // Deletion fix

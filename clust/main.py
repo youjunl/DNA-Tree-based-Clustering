@@ -34,7 +34,7 @@ class SingleProcess():
             dna_str = dna_str[self.h_index:self.h_index+self.read_len]
 
         if len(dna_str) == self.read_len:
-            align_result = tree.search(self.tree, dna_str, self.config_dict['tree_threshold'])
+            align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 2)
             label, distance = align_result.label, align_result.distance
             # If the match is successful, it is recorded.
             if label > 0 and distance < self.config_dict['tree_threshold']:
@@ -54,8 +54,7 @@ class SingleProcess():
         else:
             dna_str = dna_str[self.h_index:self.h_index+self.read_len]
 
-        align_result = self.tree.search(
-            dna_str, self.config_dict['tree_threshold'], self.read_len)
+        align_result = tree.search(self.tree, dna_str, self.config_dict['tree_threshold'])
 
         # If the match is successful, it is recorded.
         if align_result[1] < self.config_dict['tree_threshold']:
@@ -67,9 +66,9 @@ class SingleProcess():
             self.tree.insert(dna_str[:self.read_len], self.clust_num)
             self.indexList.append((dna_tag, self.clust_num))
 
-    def train(self, train_size=200):
+    def train(self, train_size=1000):
         print('Training...')
-        samples = random.sample(self.data, max(train_size, len(self.data)))
+        samples = random.sample(self.data, min(train_size, len(self.data)))
 
         for _, seq in tqdm(samples):
             result = tree.search(self.tree, seq[:self.read_len], self.config_dict['tree_threshold'])
@@ -77,9 +76,9 @@ class SingleProcess():
                 self.clust_num += 1
                 tree.insert(self.tree, seq[:self.read_len], self.clust_num)
                 self.branch_num += 1
-            # elif result.distance > 0:
-            #     self.tree.delete(result[2])
-            #     self.branch_num -= 1
+            elif result.distance > 0:
+                tree.delete(self.tree, seq[:self.read_len])
+                self.branch_num -= 1
 
     def run(self):
         if self.config_dict['use_index']:

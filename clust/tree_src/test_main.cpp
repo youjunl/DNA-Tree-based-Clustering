@@ -18,7 +18,7 @@ int main()
     for(size_t i=0; i<inp.size(); i++)
     {
         const char *seq = inp[i].c_str();
-        result_t *tmp = quick_search(tree, seq, tau, 2);
+        result_t *tmp = quick_search(tree, seq, tau, 1);
         if (tmp->label < 0)
         {
             insert_string(tree, seq, clust_ind);
