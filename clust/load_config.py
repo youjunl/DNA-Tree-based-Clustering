@@ -9,9 +9,9 @@ import getopt
 import sys
 
 config_dict={
-    "end_tree_len" : 8,
-    "tree_threshold" : 3,
-    "h_index_nums" : 0,
+    "end_tree_len" : 21,
+    "tree_threshold" : 4,
+    "h_index_nums" : 18,
     "processes_nums" : 1,
     "multi_stage": False,
     "reduce_size": 2,

@@ -65,11 +65,13 @@ struct arg_t {
    int         height;
 };
 
-
-struct item_t
+class queue_item
 {
-   int distance;
-   int * query;
+   public:
+      queue_item(int height){query = new int[height]; distance=0;};
+      queue_item(int height, int in_distance){query = new int[height]; distance=in_distance;};
+      int distance;
+      int * query;
 };
 
 struct context_t
@@ -109,12 +111,12 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
    node_t *start_node = trie->root;
    int out[length];
 
-   queue<item_t> q;
-   item_t input = {0, translated};
+   queue<queue_item*> q;
+   queue_item * input = new queue_item(height);
+   input->query = translated;
+   q.push(input);
 
    result_t *result = new result_t;
-
-   q.push(input);
    while (true)
    {
       // If found perfect matched
@@ -124,12 +126,12 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
       if(q.empty())break;
 
       // Get a candidate input
-      item_t cur_input = q.front();
+      queue_item * cur_input = q.front();
       q.pop();
 
-      if(cur_input.distance>tau)continue;
+      if(cur_input->distance>tau)continue;
 
-      context_t *context_out = context(trie, cur_input.query, height, max_depth);
+      context_t *context_out = context(trie, cur_input->query, height, max_depth);
       if (context_out->error)
       {
          // Found unmatching during traversal
@@ -138,40 +140,40 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
          for(int i=0; i<4; i++)
          {
             if(!context_out->ins[i])continue;
-            int new_query[8];
-            item_t new_input = {cur_input.distance+1, new_query};
-            for(int j=0;j<pos;j++)new_query[j] = cur_input.query[j];
-            for(int j=pos;j<height-1;j++)new_query[j] = cur_input.query[j+1];
+            queue_item * new_input = new queue_item(height, cur_input->distance+1);
+            int *new_query = new_input->query;
+            for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
+            for(int j=pos;j<height-1;j++)new_query[j] = cur_input->query[j+1];
             new_query[height-1] = 0; // Add a PAD to the end
-            q.push(new_input);          
+            q.push(new_input);
          }
          // Deletion fix
          for(int i=0; i<4; i++)
          {
             if(!context_out->del[i])continue;
-            int new_query[8];
-            item_t new_input = {cur_input.distance+1, new_query};
-            for(int j=0;j<pos;j++)new_query[j] = cur_input.query[j];
+            queue_item * new_input = new queue_item(height, cur_input->distance+1);
+            int *new_query = new_input->query;
+            for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
             new_query[pos] = i+1;
-            for(int j=pos+1;j<height;j++)new_query[j] = cur_input.query[j-1];
+            for(int j=pos+1;j<height;j++)new_query[j] = cur_input->query[j-1];
             q.push(new_input);
          }
          // Substitution fix
          for(int i=0; i<4; i++)
          {
             if(!context_out->sub[i])continue;
-            int new_query[8];
-            item_t new_input = {cur_input.distance+1, new_query};
-            for(int j=0;j<pos;j++)new_query[j] = cur_input.query[j];
+            queue_item * new_input = new queue_item(height, cur_input->distance+1);
+            int *new_query = new_input->query;
+            for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
             new_query[pos] = i+1;
-            for(int j=pos+1;j<height;j++)new_query[j] = cur_input.query[j];
+            for(int j=pos+1;j<height;j++)new_query[j] = cur_input->query[j];
             q.push(new_input);
          }
       }
       else
       {
          // Found an output
-         int cur_distance = cur_input.distance;
+         int cur_distance = cur_input->distance;
          long cur_label = context_out->label;
          if(result->distance>cur_distance)
          {
@@ -196,7 +198,7 @@ context_t * context(trie_t *trie, int * query, const int height, const int max_d
          out->error = true;
          // Pretend overflow
          int depth;
-         int search_depth = min(height-i-1, max_depth);
+         const int search_depth = min(height-i-1, max_depth);
          for(int node_num = 1; node_num<5; node_num++)
          {
             node_t *tmp_node;

@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <queue>
+#include <vector>
 
 #ifndef _TRIE_HEADER
 #define _TRIE_HEADER

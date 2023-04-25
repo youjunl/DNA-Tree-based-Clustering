@@ -36,6 +36,8 @@ class SingleProcess():
         if len(dna_str) == self.read_len:
             align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 2)
             label, distance = align_result.label, align_result.distance
+            # align_result_slow = tree.search(self.tree, dna_str, self.config_dict['tree_threshold'])
+            # print(label, distance, align_result_slow.label, align_result_slow.distance)
             # If the match is successful, it is recorded.
             if label > 0 and distance < self.config_dict['tree_threshold']:
                 self.indexList.append((dna_tag, label))
