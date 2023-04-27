@@ -10,7 +10,7 @@ import sys
 
 config_dict={
     "end_tree_len" : 21,
-    "tree_threshold" : 4,
+    "tree_threshold" : 6,
     "h_index_nums" : 18,
     "processes_nums" : 1,
     "multi_stage": False,
@@ -18,10 +18,9 @@ config_dict={
     "spliter": False,
     "filter": False,
     "use_index": False,
-    "index_file": ''
+    "index_file": '',
+    "train_num": 1000
 }
-
-opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-F:-h',['help','multi-stage','enable-spliter'])
 
 #Read input info
 def load_json(path):
@@ -61,10 +60,11 @@ Options:
 -S number of extra stages of clustering
 -R reduce size
 -F index file path
+-T train number
 --multi-stage enable multistage clustering 
 '''
 def out_put_config():
-    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-F:-h',['help','multi-stage','enable-spliter'])
+    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-R:-F:-T:-h',['help','multi-stage','enable-spliter'])
 
     for opt_name,opt_value in opt :
         if '-h' in opt_name or '--help' in opt_name:
@@ -87,6 +87,8 @@ def out_put_config():
         if '-F' in opt_name:
             config_dict['index_file'] = opt_value
             config_dict['use_index'] = True
+        if '-T' in opt_name:
+            config_dict['train_num'] = int(opt_value)
         if 'multi-stage' in opt_name:
             config_dict['multi_stage'] = True
             if 'extra_stage_num' not in config_dict.keys():

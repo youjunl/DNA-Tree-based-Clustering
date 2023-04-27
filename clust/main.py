@@ -23,9 +23,6 @@ class SingleProcess():
         self.tree = tree.new_tree(self.read_len)
         self.indexList = []
         self.clust_num = indexBegin + 0
-        self.insertion = 0
-        self.deletion = 0
-        self.substitution = 0
         self.branch_num = 0
     def cluster(self, dna_tag, dna_str):
         if self.h_index == 0:
@@ -68,9 +65,9 @@ class SingleProcess():
             self.tree.insert(dna_str[:self.read_len], self.clust_num)
             self.indexList.append((dna_tag, self.clust_num))
 
-    def train(self, train_size=1000):
+    def train(self, train_num):
         print('Training...')
-        samples = random.sample(self.data, min(train_size, len(self.data)))
+        samples = random.sample(self.data, min(train_num, len(self.data)))
 
         for _, seq in tqdm(samples):
             result = tree.search(self.tree, seq[:self.read_len], self.config_dict['tree_threshold'])
@@ -78,9 +75,10 @@ class SingleProcess():
                 self.clust_num += 1
                 tree.insert(self.tree, seq[:self.read_len], self.clust_num)
                 self.branch_num += 1
-            elif result.distance > 0:
-                tree.delete(self.tree, seq[:self.read_len])
-                self.branch_num -= 1
+            elif result.label > 0 and result.distance <= self.config_dict['tree_threshold']:
+                tree.insert(self.tree, seq[:self.read_len], result.label) # Merging
+
+        print('Test %d reads, %d clusters have been created'%(train_num, self.branch_num))
 
     def run(self):
         if self.config_dict['use_index']:
@@ -96,11 +94,11 @@ class SingleProcess():
 
         else:
             # Train clustering model
-            self.train()
+            self.train(self.config_dict['train_num'])
             # Clustering
             for tag, read in tqdm(self.data):
                 self.cluster(tag, read)
-
+            
 def chunks(arr, m):
     n = int(math.ceil(len(arr) / float(m)))
     return [arr[i:i + n] for i in range(0, len(arr), n)], [i for i in range(0, len(arr), n)]

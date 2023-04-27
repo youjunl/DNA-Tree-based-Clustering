@@ -18,7 +18,7 @@ config_dict={
     "Vertical_drift" : 5,
     "Horizontal_drift" : 5,
     "tree_threshold" : 5,
-    "now_clust_threshold" : 8,
+    "now_clust_threshold" : 2,
     "tag_nums" : 1,
     "processes_nums" : 0,
     "Cluster_size_threshold" : 1,

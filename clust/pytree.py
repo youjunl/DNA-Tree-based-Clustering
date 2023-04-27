@@ -10,8 +10,7 @@ class Trie:
         self.dna_dict = {"A": 0, "T": 1, "G": 2, "C": 3}
         self.dna_dict_inv = {0: "A", 1: "T", 2: "G", 3: "C"}
         self.node_nums = 4
-        self.prev_num = 2
-        self.maxOptimDepth = 3
+        self.maxOptimDepth = 2
         self.minTerminate = 14
         self.children = [None for _ in range(self.node_nums)]
         self.isEnd = False

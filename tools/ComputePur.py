@@ -21,6 +21,8 @@ def compute(fileIn, tags):
             # The second element of each line is the output clustering index of the algorithms.
             ind, cluster = map(int, text.strip().split(','))
             # Save these pairs in a list.
+            if ind > len(tags):
+                continue
             if tags[ind-1] != -1:
                 results.append((tags[ind-1], cluster))
 
@@ -33,10 +35,13 @@ def compute(fileIn, tags):
     for i in range(len(results)):
         clusters[results[i][1]-1].append(results[i][0])
     clusters = [c for c in clusters if c != []]
-    
+    # Remove the cluster that size = 1
+    clusters = [c for c in clusters if len(c) > 1]
     # Count the maximum frequencies in every clasters
     cnt = 0
+    seq_cnt = 0
     for cluster in clusters:
+        seq_cnt += len(cluster)
         # A dictionary for storing the number of tags
         tagNums = defaultdict(int)
         tags = set(cluster)
@@ -47,8 +52,8 @@ def compute(fileIn, tags):
         for tag in tags:
             if tagNums[tag] > maxNum:
                 maxNum = tagNums[tag]
-        cnt += maxNum/len(cluster)
-    acc = cnt / len(clusters)
+        cnt += maxNum
+    acc = cnt / seq_cnt
     return acc
 
 if __name__ == '__main__':
@@ -83,8 +88,8 @@ if __name__ == '__main__':
         ind, tag = map(int, text.strip().split(','))
         tags[ind-1] = tag
 
-    # Compute accuracy for each input clustering indexes file
-    print('Computing accuracy...')
+    # Compute purity for each input clustering indexes file
+    print('Computing purity...')
     outAcc = [0 for _ in indexes]
     for i, infile in enumerate(indexes):
         acc = compute(infile, tags)

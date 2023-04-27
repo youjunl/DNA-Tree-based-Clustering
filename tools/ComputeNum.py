@@ -1,21 +1,25 @@
 import matplotlib.pyplot as plt
 from collections import defaultdict
 from tqdm import tqdm
+import numpy as np
 import getopt, sys
 
 text = '''
 #############################################################################################
-#Implementation of accuracy in paper:                                                       #
-#Rashtchian, Cyrus, et al. "Clustering billions of reads for DNA data storage." NIPS 2017.  #
+#Cluster size comparison                                                                    #
 #############################################################################################
 '''
-
+def plot_hist(ax, cnt_dist, label):
+    max_num = max(cnt_dist.keys())
+    x = []
+    for i in range(1, max_num+1):
+        x.append(cnt_dist[i])
+    bins = list(range(1, max_num+1))
+    ax.hist(x, bins, histtype="stepfilled", alpha=0.6, density=True, label=label)
+    
 def compute(fileIn, tags, clustNum, gamma):
     # Total number of clusters in the labeled data
-    nClust = 0
-    for k in clustNum.keys():
-        if clustNum[k] > 1:
-            nClust += 1
+    nClust = len(clustNum.keys())
 
     # Read clustering results
     results = []
@@ -42,41 +46,22 @@ def compute(fileIn, tags, clustNum, gamma):
     clusters = [c for c in clusters if c != []]
     
     # A list that stores the maximum size of correct clustering for different tags.
-    score = [0] * max(clustNum.keys())
+    new_clustCnt = defaultdict(int)
     for cluster in clusters:
-        if len(cluster) == 1:
-            continue
-        
         # Check if all the tags in a clusters are the same.
         tags = set(cluster)
         if len(tags) > 1:
             # This cluster is invalid
             continue
-        
-        # Maximize the size of the clusters.
-        tag = cluster[0]
-        score[tag-1] = max(score[tag-1], len(cluster))
 
-    # Compute accuracy under different gammas.
+        new_clustCnt[len(cluster)] += 1
 
-    acc = [0 for _ in gamma]
-    for i, g in enumerate(gamma):
-        cnt = 0
-        for tag in clustNum.keys():
-            if score[tag-1] / clustNum[tag] >= g:
-                cnt += 1
-        acc[i] = cnt / nClust
-
-    # compare = [(tag, clustNum[tag], score[tag - 1], clustNum[tag] - score[tag - 1]) for tag in clustNum.keys()]
-    # compare = sorted(compare, key=lambda k: k[0])
-    # [print(tmp) for tmp in compare]
-    print('Num cluster: %d. Inp cluster: %d'%(len(clustNum.keys()), len(clusters)))
-    return acc
+    return new_clustCnt
 
 if __name__ == '__main__':
     print(text)
     # Inputs Management
-    helpInfo = '[Usage]\nComputeAcc.py <labeled data> <cluster indexes file> <cluster indexes file 2> ... <output file>'
+    helpInfo = '[Usage]\nComputeNum.py <labeled data> <cluster indexes file> <cluster indexes file 2> ... <output file>'
     try:
         opts, args = getopt.getopt(sys.argv[1:],"h",[])
         for opt, arg in opts:
@@ -113,24 +98,16 @@ if __name__ == '__main__':
         clustNum[tag] += 1
         tags[ind-1] = tag
         
+    clustCnt = defaultdict(int)
+    for k in clustNum.keys():
+        clustCnt[clustNum[k]] += 1
     # Compute accuracy for each input clustering indexes file
-    print('Computing accuracy...')
-    outAcc = [[] for _ in indexes]
-    for i, infile in enumerate(indexes):
-        acc = compute(infile, tags, clustNum, gamma)
-        outAcc[i] = acc
 
-    with open(outfile, 'w') as f:
-        f.truncate(0)
-        f.write('Gamma:\n')
-        for g in gamma:
-            f.write('%.4f, '%g)
-        f.write('\n')
-        for i, accData in enumerate(outAcc):
-            f.write(indexes[i])
-            f.write('\n')
-            for acc in accData:
-                f.write('%.4f, '%acc)
-            f.write('\n')
-    
-    print('Finished!')
+    fig, ax = plt.subplots()
+    plot_hist(ax, clustCnt, 'Ground Truth')
+    for i, infile in enumerate(indexes):
+        new_clustCnt = compute(infile, tags, clustNum, gamma)
+        plot_hist(ax, new_clustCnt, infile)
+
+    plt.legend()
+    plt.show()

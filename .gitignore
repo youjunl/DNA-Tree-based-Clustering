@@ -6,3 +6,5 @@ testdata/
 *.txt
 .vscode
 *.gv
+iclust/
+clover/

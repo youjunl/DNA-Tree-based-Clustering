@@ -3,16 +3,16 @@ import getopt, sys
 from tqdm import tqdm
 
 params = {
-    'r': 10, # Threshold for edit distance
+    'r': 6, # Threshold for edit distance
     'q': 3, # Substring's length
     'w': 4, # Anchor's length
-    'l': 8, # Hash's length
+    'l': 16, # Hash's length
     'n': 150, # Real segmentation length
     'theta_low': 10,
     'theta_high': 20,
     'local_step': 15,
     'comm_step': 24,
-    'core_num' : 1,
+    'core_num' : 6,
     'block_len' : 25,
     'thread': 4,
 }
