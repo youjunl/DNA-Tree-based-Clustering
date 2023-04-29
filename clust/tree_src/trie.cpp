@@ -154,7 +154,7 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
             queue_item * new_input = new queue_item(height, cur_input->distance+1);
             int *new_query = new_input->query;
             for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
-            new_query[pos] = i+1;
+            new_query[pos] = i;
             for(int j=pos+1;j<height;j++)new_query[j] = cur_input->query[j-1];
             q.push(new_input);
          }
@@ -165,7 +165,7 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
             queue_item * new_input = new queue_item(height, cur_input->distance+1);
             int *new_query = new_input->query;
             for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
-            new_query[pos] = i+1;
+            new_query[pos] = i;
             for(int j=pos+1;j<height;j++)new_query[j] = cur_input->query[j];
             q.push(new_input);
          }
@@ -212,7 +212,7 @@ context_t * context(trie_t *trie, int * query, const int height, const int max_d
                   if((tmp_node=tmp_node->child[query[i+depth]]) == NULL)break;
                   depth++;
                }
-               if (depth == search_depth)out->del[node_num - 1] = true;
+               if (depth == search_depth)out->del[node_num] = true;
 
                // Insertion
                depth = 0;
@@ -222,7 +222,7 @@ context_t * context(trie_t *trie, int * query, const int height, const int max_d
                   if((tmp_node=tmp_node->child[query[i+depth+1]]) == NULL)break;
                   depth++;
                }
-               if (depth == search_depth-1)out->ins[node_num - 1] = true;
+               if (depth == search_depth-1)out->ins[node_num] = true;
 
                // Substitution
                depth = 0;
@@ -232,7 +232,7 @@ context_t * context(trie_t *trie, int * query, const int height, const int max_d
                   if((tmp_node=tmp_node->child[query[i+depth+1]]) == NULL)break;
                   depth++;
                }
-               if (depth == search_depth)out->sub[node_num - 1] = true;               
+               if (depth == search_depth)out->sub[node_num] = true;               
             }
          }
          return out;
@@ -246,9 +246,9 @@ context_t * context(trie_t *trie, int * query, const int height, const int max_d
       // Error not found, but terminated early because of insertions
       // Add a deletion flag to the end
       out->error = true;
-      for(int node_num = 1; node_num<5; node_num++)
+      for(int node_num = 0; node_num<4; node_num++)
       {
-         if(node->child[node_num] != NULL)out->del[node_num-1]=true;
+         if(node->child[node_num] != NULL)out->del[node_num]=true;
       } 
    }
    

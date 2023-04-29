@@ -37,7 +37,7 @@ struct trie_t
 
 struct node_t
 {
-   node_t *child[4] = {nullptr}; // Array of 5 children pointers.
+   node_t *child[4] = {nullptr}; // Array of 6 children pointers.
    bool isEnd = false;           // Indentifier of leaf
    unsigned long label;       // Lable on the leaf
    char ch_num;

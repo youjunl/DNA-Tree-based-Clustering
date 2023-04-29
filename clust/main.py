@@ -48,7 +48,7 @@ class SingleProcess():
         self.infile = infile
         self.tree = tree.new_tree(self.read_len)
         self.sub_tree_depth = self.read_len
-        self.sub_tree = tree.new_tree(self.tree_depth)
+        self.sub_tree = tree.new_tree(self.sub_tree_depth)
         self.indexList = []
         self.clust_num = indexBegin + 0
         self.branch_num = 0
@@ -60,7 +60,7 @@ class SingleProcess():
     def cluster(self, dna_tag, dna_str):
         dna_str = dna_str[self.h_index:self.h_index+self.read_len]
         if len(dna_str) == self.read_len:
-            align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 3)
+            align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 4)
             label = align_result.label
             # If the match is successful, it is recorded.
             if label > 0:
@@ -68,7 +68,7 @@ class SingleProcess():
             else:
                 # Check umatched sequence in subtree
                 sub_dna_str = dna_str[:self.sub_tree_depth]
-                sub_align_result = tree.search(self.sub_tree, sub_dna_str, 3)
+                sub_align_result = tree.search(self.sub_tree, sub_dna_str, self.config_dict['tree_threshold'])
                 if sub_align_result.label > 0:
                     new_label = sub_align_result.label
 

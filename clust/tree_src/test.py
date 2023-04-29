@@ -51,21 +51,20 @@ if __name__=='__main__':
             tree.insert(tr, inp, clust_ind)
             clust_ind += 1
         
-    n = 12
-    sim = 100
+    n = 14
+    sim = 10000
     tr = tree.new_tree(n)
     DNAbet = 'ATCG'
     ori_seq = ''.join(DNAbet[random.randint(0, 3)] for _ in range(n))
     tree.insert(tr, ori_seq, 1)
     cnt = 0
     tau = 6
-    for _ in tqdm(range(sim)):
+    for i in tqdm(range(sim)):
         seq = ''.join(DNAbet[random.randint(0, 3)] for _ in range(n))
         # Compute tree output
         result = tree.search(tr, seq, tau)
         result_quick = tree.quick_search(tr, seq, tau, 3)
         result = min(result.distance, tau)
-
         # https://www.geeksforgeeks.org/edit-distance-dp-5/
         py_result = min(editDistance(ori_seq, seq), tau)
 

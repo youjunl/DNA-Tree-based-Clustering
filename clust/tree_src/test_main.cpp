@@ -11,10 +11,13 @@ int main()
     vector<string> inp;
     inp.push_back("ATTGCATAAT");
     inp.push_back("ATTGCAGAAT");
-    inp.push_back("ATTGCGATAT");
-    inp.push_back("ATTGCGATAT");
-    inp.push_back("ATTGCGATAT");
-    inp.push_back("ATTGCGATAT");
+    inp.push_back("ATTGAGATAT");
+    inp.push_back("ATTGCTATAT");
+    inp.push_back("ATTGCGCTAT");
+    inp.push_back("AATGCGATAT");
+    inp.push_back("CCAGCGATAT");
+    inp.push_back("TTTGCGCTAT");
+    inp.push_back("GTCTAGATAT");
     // Create tree
     trie_t *tree = new_trie(10);
     const int tau = 6;
