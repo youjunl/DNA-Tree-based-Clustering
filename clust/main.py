@@ -9,43 +9,78 @@ import random
 from multiprocessing import Process, Manager, Queue, Pool
 from tqdm import tqdm
 from clust import load_config as lc
-from clust import pytree as tr
-from clust.multi_stage import ssc, ssc_repeat
+from clust.multi_stage import *
 from clust import tree
+from collections import defaultdict, Counter
+import numpy as np
+import mmap
+
+def mapcount(filename):
+    f = open(filename, "r+")
+    buf = mmap.mmap(f.fileno(), 0)
+    lines = 0
+    readline = buf.readline
+    while readline():
+        lines += 1
+    return lines
+
+def one_hot_encoding(seq, dict_alphabet, max_seq_length, smooth=1.):
+    out = np.zeros((len(dict_alphabet), max_seq_length), dtype=np.float32)
+    if smooth < 1:
+        out[:] = (1 - smooth) / (len(dict_alphabet) - 1)
+    l = len(seq)
+    for i, c in enumerate(seq):
+        out[dict_alphabet[c], i] = smooth
+    out[:, l:] = 0
+    return out
+
+def one_hot_decoding(inp, dict_alphabet):
+    tmp = np.argmax(inp, axis=0)
+    out = ''.join(dict_alphabet[i] for i in tmp)
+    return out
 
 class SingleProcess():
 
-    def __init__(self, data, config_dict, indexBegin = 0):
+    def __init__(self, infile, config_dict, indexBegin = 0):
         self.config_dict = config_dict
         self.h_index = self.config_dict["h_index_nums"]
         self.read_len = self.config_dict["end_tree_len"]
-        self.data = data
+        self.infile = infile
         self.tree = tree.new_tree(self.read_len)
+        self.sub_tree_depth = self.read_len
+        self.sub_tree = tree.new_tree(self.tree_depth)
         self.indexList = []
         self.clust_num = indexBegin + 0
         self.branch_num = 0
+        self.core_set = {}
+        self.alphabet = {'A':0, 'T':1, 'G':2, 'C':3}
+        self.reversed_alphabet = {0:'A', 1:'T', 2:'G', 3:'C'}
+        self.merge_map = {}
+
     def cluster(self, dna_tag, dna_str):
-        if self.h_index == 0:
-            dna_str = dna_str[:self.read_len]
-        else:
-            dna_str = dna_str[self.h_index:self.h_index+self.read_len]
-
+        dna_str = dna_str[self.h_index:self.h_index+self.read_len]
         if len(dna_str) == self.read_len:
-            align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 2)
-            label, distance = align_result.label, align_result.distance
-            # align_result_slow = tree.search(self.tree, dna_str, self.config_dict['tree_threshold'])
-            # print(label, distance, align_result_slow.label, align_result_slow.distance)
+            align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 3)
+            label = align_result.label
             # If the match is successful, it is recorded.
-            if label > 0 and distance < self.config_dict['tree_threshold']:
+            if label > 0:
                 self.indexList.append((dna_tag, label))
-
             else:
-                self.clust_num += 1
-                self.branch_num += 1
-                tree.insert(self.tree, dna_str, self.clust_num)
-                self.indexList.append((dna_tag, self.clust_num))
+                # Check umatched sequence in subtree
+                sub_dna_str = dna_str[:self.sub_tree_depth]
+                sub_align_result = tree.search(self.sub_tree, sub_dna_str, 3)
+                if sub_align_result.label > 0:
+                    new_label = sub_align_result.label
+
+                else:
+                    self.clust_num += 1
+                    new_label = self.clust_num
+                    tree.insert(self.sub_tree, sub_dna_str, new_label)
+                tree.insert(self.tree, dna_str, new_label)
+                self.indexList.append((dna_tag, new_label))
         else:
-            return
+            self.clust_num += 1
+            self.indexList.append((dna_tag, self.clust_num))
 
     def cluster_with_index(self, dna_tag, dna_str):
         if self.h_index == 0:
@@ -61,43 +96,24 @@ class SingleProcess():
 
         else:
             self.clust_num += 1
-            self.branch_num += 1
             self.tree.insert(dna_str[:self.read_len], self.clust_num)
             self.indexList.append((dna_tag, self.clust_num))
 
-    def train(self, train_num):
-        print('Training...')
-        samples = random.sample(self.data, min(train_num, len(self.data)))
-
-        for _, seq in tqdm(samples):
-            result = tree.search(self.tree, seq[:self.read_len], self.config_dict['tree_threshold'])
-            if result.label == -1:
-                self.clust_num += 1
-                tree.insert(self.tree, seq[:self.read_len], self.clust_num)
-                self.branch_num += 1
-            elif result.label > 0 and result.distance <= self.config_dict['tree_threshold']:
-                tree.insert(self.tree, seq[:self.read_len], result.label) # Merging
-
-        print('Test %d reads, %d clusters have been created'%(train_num, self.branch_num))
-
     def run(self):
-        if self.config_dict['use_index']:
-            with open(self.config_dict['index_file'], 'r') as f:
-                for line in f.readlines():
-                    seq = line.strip()
-                    self.clust_num += 1
-                    self.tree.insert(seq, self.clust_num)
-                self.read_len = len(seq)
+        # Get number of reads
+        numReads = mapcount(self.infile)
 
-            for tag, read in tqdm(self.data):
-                self.cluster_with_index(tag, read)
-
-        else:
-            # Train clustering model
-            self.train(self.config_dict['train_num'])
-            # Clustering
-            for tag, read in tqdm(self.data):
-                self.cluster(tag, read)
+        print('Number of reads: %d'%numReads)
+        with tqdm(total=numReads) as pbar:
+            with open(self.infile, 'r') as f:
+                m = mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ)
+                line = m.readline()
+                while line != b'':     
+                    pbar.update(1)
+                    tag, read = line.decode('utf8').strip().replace('N', '').split(' ')
+                    self.cluster(int(tag), read)
+                    line = m.readline()
+        return self.indexList
             
 def chunks(arr, m):
     n = int(math.ceil(len(arr) / float(m)))
@@ -105,11 +121,10 @@ def chunks(arr, m):
 
 def clust(data, config_dict):
     p = SingleProcess(data, config_dict)
-    p.run()
-    return p.indexList
+    return p.run()
 
-def clustMP(data, config_dict, indexList, indexBegin):
-    p = SingleProcess(data, config_dict, indexBegin)
+def clustMP(infile, config_dict, indexList, indexBegin):
+    p = SingleProcess(infile, config_dict, indexBegin)
     p.run()
     for i, index in enumerate(p.indexList):
         indexList[indexBegin + i] = index
@@ -118,50 +133,12 @@ if __name__ == '__main__':
     config_dict = lc.out_put_config()
     print(config_dict['tag'])
 
-    # Open file
-    f = open(config_dict['input_path'], "r")
-
-    # Read file into the memory
-    lines = f.readlines()
-    data = []
-    for line in lines:
-        tag, read = line.strip().replace('N', '').split(' ')
-        data.append((int(tag), read))
     # Memory for output
     indexList = []
+    print('Start clustering...')
     st = time.time()
     # Start clustering
-    if not config_dict["multi_stage"]:
-        indexList = clust(data, config_dict)
-
-    else: # Multi processor mode is only valid for multi stage clustering
-        nProcess = config_dict['processes_nums']
-        if nProcess < 2:
-            indexList = clust(data, config_dict)          
-        else:
-            splitData, indexBegin = chunks(data, nProcess)
-            Processes = []
-            manager = Manager()
-            indexListMP = manager.list([[] for _ in range(len(data))])
-            for i in range(nProcess):
-                p = Process(target=clustMP, args=(splitData[i], config_dict, indexListMP, indexBegin[i]))
-                p.start()
-                Processes.append(p)
-
-            for p in Processes:
-                p.join()
-                indexList = indexListMP
-        # Multi stage clustering
-        start_tree_depth = config_dict["end_tree_len"]
-        tree_depth = start_tree_depth
-        stageNum = config_dict['extra_stage_num']
-        tree_threshold = config_dict["tree_threshold"]
-        spliterFlag = config_dict["spliter"]
-        filterFlag = config_dict["filter"]
-        for i in range(stageNum):
-            indexList = ssc_repeat(indexList, data, tree_depth, tree_threshold, filter=filterFlag, spliter=spliterFlag)
-            tree_threshold += 2
-            print('st %d'%(i+2))
+    indexList = clust(config_dict['input_path'], config_dict)
 
     print('Time: %f'%(time.time()-st))
     if 'output_file' in config_dict:

@@ -40,13 +40,10 @@ def compute(fileIn, tags, clustNum, gamma):
 
     # Remove empty clusters
     clusters = [c for c in clusters if c != []]
-    
+    # clusters = [c for c in clusters if len(c)>1]
     # A list that stores the maximum size of correct clustering for different tags.
     score = [0] * max(clustNum.keys())
     for cluster in clusters:
-        if len(cluster) == 1:
-            continue
-        
         # Check if all the tags in a clusters are the same.
         tags = set(cluster)
         if len(tags) > 1:
@@ -58,18 +55,13 @@ def compute(fileIn, tags, clustNum, gamma):
         score[tag-1] = max(score[tag-1], len(cluster))
 
     # Compute accuracy under different gammas.
-
     acc = [0 for _ in gamma]
     for i, g in enumerate(gamma):
         cnt = 0
         for tag in clustNum.keys():
-            if score[tag-1] / clustNum[tag] >= g:
+            if clustNum[tag] > 1 and score[tag-1] / clustNum[tag] >= g:
                 cnt += 1
         acc[i] = cnt / nClust
-
-    # compare = [(tag, clustNum[tag], score[tag - 1], clustNum[tag] - score[tag - 1]) for tag in clustNum.keys()]
-    # compare = sorted(compare, key=lambda k: k[0])
-    # [print(tmp) for tmp in compare]
     print('Num cluster: %d. Inp cluster: %d'%(len(clustNum.keys()), len(clusters)))
     return acc
 
@@ -100,7 +92,8 @@ if __name__ == '__main__':
     outfile = args[-1]
 
     # Set range of gamma
-    gamma = [i*0.1 for i in range(0, 11)]
+    step_num = 20
+    gamma = [i/step_num for i in range(0, step_num+1)]
     acc = [0] * len(gamma)
 
     # Count frequencies of tags in the labeled data.
@@ -122,15 +115,18 @@ if __name__ == '__main__':
 
     with open(outfile, 'w') as f:
         f.truncate(0)
-        f.write('Gamma:\n')
+        
+        # header
+        f.write('Gamma,')
         for g in gamma:
-            f.write('%.4f, '%g)
+            f.write('%f,'%g)
         f.write('\n')
+
+        # results
         for i, accData in enumerate(outAcc):
-            f.write(indexes[i])
-            f.write('\n')
+            f.write('%s,'%indexes[i])
             for acc in accData:
-                f.write('%.4f, '%acc)
+                f.write('%.4f,'%acc)
             f.write('\n')
     
     print('Finished!')

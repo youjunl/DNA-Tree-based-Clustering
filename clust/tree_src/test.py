@@ -4,32 +4,31 @@ import tree
 import random
 from tqdm import tqdm
 
-def editDistance(str1, str2, m, n):
- 
-    # If first string is empty, the only option is to
-    # insert all characters of second string into first
-    if m == 0:
-        return n
- 
-    # If second string is empty, the only option is to
-    # remove all characters of first string
-    if n == 0:
-        return m
- 
-    # If last characters of two strings are same, nothing
-    # much to do. Ignore last characters and get count for
-    # remaining strings.
-    if str1[m-1] == str2[n-1]:
-        return editDistance(str1, str2, m-1, n-1)
- 
-    # If last characters are not same, consider all three
-    # operations on last character of first string, recursively
-    # compute minimum cost for all three operations and take
-    # minimum of three values.
-    return 1 + min(editDistance(str1, str2, m, n-1),    # Insert
-                   editDistance(str1, str2, m-1, n),    # Remove
-                   editDistance(str1, str2, m-1, n-1)    # Replace
-                   )
+def editDistance(A, B):
+    N, M = len(A), len(B)
+    # Create an array of size NxM
+    dp = [[0 for i in range(M + 1)] for j in range(N + 1)]
+
+    # Base Case: When N = 0
+    for j in range(M + 1):
+        dp[0][j] = j
+    # Base Case: When M = 0
+    for i in range(N + 1):
+        dp[i][0] = i
+    # Transitions
+    for i in range(1, N + 1):
+        for j in range(1, M + 1):
+            if A[i - 1] == B[j - 1]:
+                dp[i][j] = dp[i-1][j-1]
+            else:
+                dp[i][j] = 1 + min(
+                    dp[i-1][j], # Insertion
+                    dp[i][j-1], # Deletion
+                    dp[i-1][j-1] # Replacement
+                )
+
+    return dp[N][M]
+
 
 if __name__=='__main__':
 
@@ -48,7 +47,7 @@ if __name__=='__main__':
         out_quick = tree.quick_search(tr, inp, 6, 2)
         # print('%s %d %d'%(inp, out.label, out.distance))
         print('%s %d %d'%(inp, out_quick.label, out_quick.distance))
-        if out.label < 0:
+        if out.label == 0:
             tree.insert(tr, inp, clust_ind)
             clust_ind += 1
         
@@ -68,7 +67,7 @@ if __name__=='__main__':
         result = min(result.distance, tau)
 
         # https://www.geeksforgeeks.org/edit-distance-dp-5/
-        py_result = min(editDistance(ori_seq, seq, n, n), tau)
+        py_result = min(editDistance(ori_seq, seq), tau)
 
         # Compare
         if result == py_result:

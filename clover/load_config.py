@@ -22,7 +22,7 @@ config_dict={
     "tag_nums" : 1,
     "processes_nums" : 0,
     "Cluster_size_threshold" : 1,
-    "h_index_nums" : 18,
+    "h_index_nums" : 0,
     "e_index_nums" : 0,
     "read_len_min" : 0,
 

@@ -2,7 +2,6 @@
 #define min(a,b) (((a) < (b)) ? (a) : (b))
 #define max(a,b) (((a) > (b)) ? (a) : (b))
 
-#define PAD 5              // Position of padding nodes.
 #define EOS -1             // End Of String, for 'dash()'.
 using namespace std;
 // Translation table to insert nodes in the trie.
@@ -14,12 +13,12 @@ using namespace std;
 static const int translate[256] = { 
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
- PAD,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-   0,1,0,2,0,0,0,3,0,0,0,0,0,0,0,0,
-   0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,
-   0,1,0,2,0,0,0,3,0,0,0,0,0,0,0,0,
-   0,0,0,0,4,0,0,0,0,0,0,0,0,0,0,0,
+   0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+   0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,
+   0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,
+   0,0,0,1,0,0,0,2,0,0,0,0,0,0,0,0,
+   0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,0,
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -29,6 +28,7 @@ static const int translate[256] = {
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
+
 // Translation table to query a sequence in the trie.
 // In the table below, non DNA letters are set to a numerical
 // value of 6, which will always cause of mismatch with
@@ -43,12 +43,12 @@ static const int translate[256] = {
 static const int altranslate[256] = { 
    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
- PAD,6,6,6,6,6,6,6,6,6,6,6,6,0,6,6,
+   6,6,6,6,6,6,6,6,6,6,6,6,6,0,6,6,
    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
-   6,1,6,2,6,6,6,3,6,6,6,6,6,6,6,6,
-   6,6,6,6,4,6,6,6,6,6,6,6,6,6,6,6,
-   6,1,6,2,6,6,6,3,6,6,6,6,6,6,6,6,
-   6,6,6,6,4,6,6,6,6,6,6,6,6,6,6,6,
+   6,0,6,1,6,6,6,2,6,6,6,6,6,6,6,6,
+   6,6,6,6,3,6,6,6,6,6,6,6,6,6,6,6,
+   6,0,6,1,6,6,6,2,6,6,6,6,6,6,6,6,
+   6,6,6,6,3,6,6,6,6,6,6,6,6,6,6,6,
    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
@@ -60,7 +60,7 @@ static const int altranslate[256] = {
 };
 
 struct arg_t {
-   int         tau;
+   char         tau;
    int       * query;
    int         height;
 };
@@ -199,7 +199,7 @@ context_t * context(trie_t *trie, int * query, const int height, const int max_d
          // Pretend overflow
          int depth;
          const int search_depth = min(height-i-1, max_depth);
-         for(int node_num = 1; node_num<5; node_num++)
+         for(int node_num = 0; node_num<4; node_num++)
          {
             node_t *tmp_node;
             if(node->child[node_num] != NULL)
@@ -379,7 +379,7 @@ result_t *poucet(node_t *node, const int depth, int *out, char *pcache, struct a
    }
 
    // If traversal fail or node not exists, try other nodes
-   for (int i = 1; i < 5; i++)
+   for (int i = 0; i < 4; i++)
    {
       // Skip if current node has no child at this position.
       if (i == next_ind || (child = node->child[i]) == NULL)
@@ -455,8 +455,8 @@ node_t * new_trienode(void)
 
    // Initialize the cache. This is important for the
    // dynamic programming algorithm.
-   const char init[] = {8,7,6,5,4,3,2,1,0,1,2,3,4,5,6,7,8};
-   memcpy(node->cache, init, 2*TAU+1);
+   // const char init[] = {8,7,6,5,4,3,2,1,0,1,2,3,4,5,6,7,8};
+   // memcpy(node->cache, init, 2*TAU+1);
    return node;
 
 }

@@ -98,9 +98,7 @@ if __name__ == '__main__':
     with open(outfile, 'w') as f:
         f.truncate(0)
         for i, acc in enumerate(outAcc):
-            f.write(indexes[i])
-            f.write('\n')
-            f.write('%.4f, '%acc)
-            f.write('\n')
+            f.write('%s,'%indexes[i])
+            f.write('%f\n'%acc)
     
     print('Finished!')

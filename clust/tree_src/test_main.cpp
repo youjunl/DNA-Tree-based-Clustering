@@ -23,7 +23,7 @@ int main()
     {
         const char *seq = inp[i].c_str();
         result_t *tmp = quick_search(tree, seq, tau, 2);
-        if (tmp->label < 0)
+        if (tmp->label == 0)
         {
             insert_string(tree, seq, clust_ind);
             clust_ind++;
