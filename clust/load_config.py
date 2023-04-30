@@ -10,7 +10,8 @@ import sys
 
 config_dict={
     "end_tree_len" : 21,
-    "tree_threshold" : 4,
+    "tree_threshold" : 3,
+    "sub_tree_threshold" : 2,
     "h_index_nums" : 0,
     "processes_nums" : 1,
     "multi_stage": False,

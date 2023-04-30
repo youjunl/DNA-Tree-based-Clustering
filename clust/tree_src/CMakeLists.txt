@@ -6,6 +6,7 @@ project(tree)
 include_directories(pybind11/include)
 include_directories(E:/Python310/include)
 add_subdirectory(pybind11)
+
 add_compile_options(-static-libgcc -static-libstdc++)
 # Build tree module
 add_library(trie trie.cpp)

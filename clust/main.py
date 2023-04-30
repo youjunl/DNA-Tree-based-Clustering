@@ -63,12 +63,19 @@ class SingleProcess():
             align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 4)
             label = align_result.label
             # If the match is successful, it is recorded.
+            # if(dna_str=='ATGATCAACACCTGAGAGTAT'):
+            #     print('qsearch')
+            #     print(label, align_result.distance)
+            #     sub_align_result = tree.search(self.sub_tree, 'ATGATCAACACCTGAGAGTAT', self.config_dict['tree_threshold'])
+            #     print('search')
+            #     print(sub_align_result.label, sub_align_result.distance)
+
             if label > 0:
                 self.indexList.append((dna_tag, label))
             else:
                 # Check umatched sequence in subtree
                 sub_dna_str = dna_str[:self.sub_tree_depth]
-                sub_align_result = tree.search(self.sub_tree, sub_dna_str, self.config_dict['tree_threshold'])
+                sub_align_result = tree.search(self.sub_tree, sub_dna_str, self.config_dict['sub_tree_threshold'])
                 if sub_align_result.label > 0:
                     new_label = sub_align_result.label
 

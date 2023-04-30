@@ -10,24 +10,22 @@ int main()
     cout << "Demo" << endl;
     vector<string> inp;
     inp.push_back("ATTGCATAAT");
-    inp.push_back("ATTGCAGAAT");
-    inp.push_back("ATTGAGATAT");
-    inp.push_back("ATTGCTATAT");
-    inp.push_back("ATTGCGCTAT");
-    inp.push_back("AATGCGATAT");
-    inp.push_back("CCAGCGATAT");
-    inp.push_back("TTTGCGCTAT");
-    inp.push_back("GTCTAGATAT");
+    inp.push_back("ATTGCATAAT");
+    inp.push_back("ATTCGATTTC"); // New sequence
+    inp.push_back("ATTGGATTTC"); // New sequence with error
+
     // Create tree
     trie_t *tree = new_trie(10);
-    const int tau = 6;
+    const int tau = 3;
     int clust_ind = 1;
     for(size_t i=0; i<inp.size(); i++)
     {
         const char *seq = inp[i].c_str();
         result_t *tmp = quick_search(tree, seq, tau, 2);
+        result_t *tmp_slow = poucet_search(tree, seq, tau);
         if (tmp->label == 0)
         {
+            cout << "Poucet" << to_string(tmp_slow->label) << " " << to_string(tmp_slow->distance) << endl;
             insert_string(tree, seq, clust_ind);
             clust_ind++;
         }

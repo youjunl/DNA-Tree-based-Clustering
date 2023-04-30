@@ -7,13 +7,17 @@ import cupy
 # inputTags = 'testdata/toClustTags.txt'
 # algResult = 'output_ERR1816980_clust.txt'
 
-# inputReads = 'testdata/toClustSmallReads.txt'
-# inputTags = 'testdata/toClustSmallTags.txt'
-# algResult = 'output_file_Small_1.txt'
+inputReads = 'testdata/toClustSmallReads.txt'
+inputTags = 'testdata/toClustSmallTags.txt'
+algResult = 'output_file_Small_1.txt'
 
-inputReads = 'testdata/toClustRead_p10.txt'
-inputTags = 'testdata/toClustTag_p10.txt'
-algResult = 'output_file_P10_clust.txt'
+# inputReads = 'testdata/toClustRead_p10.txt'
+# inputTags = 'testdata/toClustTag_p10.txt'
+# algResult = 'output_file_P10_clust.txt'
+
+# inputReads = 'testdata/toClustRead_id20.txt'
+# inputTags = 'testdata/toClustTag_id20.txt'
+# algResult = 'output_file_id20_clust.txt'
 
 def editDistance(A, B):
     N, M = len(A), len(B)
@@ -99,16 +103,16 @@ def compute(fileIn, tags, clustNum, gamma):
         tag = cluster[0][0]
 
 
-        # if len(cluster) > 15:
-        #     inds = [p[2] for p in cluster]
-        #     if len(cluster) != len(ref_cluster_map[tag]):
-        #         print(cluster[0][1][:21])
-        #         print('Not clusted...')
-        #         for ind in ref_cluster_map[tag]:
-        #             if ind not in inds:
-        #                 dist = editDistance(cluster[0][1][:21], reads[ind-1][:21])
-        #                 print('Seq:%s\t Ind:%d\t Now:%s\t Dist:%d'%(reads[ind-1][:21], ind, results[ind-1][1],dist))
-        #     print(inds)
+        if len(cluster) > 15:
+            inds = [p[2] for p in cluster]
+            if len(cluster) != len(ref_cluster_map[tag]):
+                print(cluster[0][1][:21])
+                print('Not clusted...')
+                for ind in ref_cluster_map[tag]:
+                    if ind not in inds:
+                        dist = editDistance(cluster[0][1][:21], reads[ind-1][:21])
+                        print('Seq:%s\t Ind:%d\t Now:%s\t Dist:%d'%(reads[ind-1][:21], ind, results[ind-1][1],dist))
+            print(inds)
 
         score[tag-1] = max(score[tag-1], len(cluster))
 

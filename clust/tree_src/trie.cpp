@@ -4,12 +4,12 @@
 
 #define EOS -1             // End Of String, for 'dash()'.
 using namespace std;
+
 // Translation table to insert nodes in the trie.
-//          ' ': PAD (5)
-//     'a', 'A': 1
-//     'c', 'C': 2
-//     'g', 'G': 3
-//     't', 'T': 4
+//     'a', 'A': 0
+//     'c', 'C': 1
+//     'g', 'G': 2
+//     't', 'T': 3
 static const int translate[256] = { 
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -29,16 +29,10 @@ static const int translate[256] = {
    0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
 };
 
-// Translation table to query a sequence in the trie.
-// In the table below, non DNA letters are set to a numerical
-// value of 6, which will always cause of mismatch with
-// sequences translated from the table above. 'PAD' and '-' are
-// the only non DNA symbols that match themselves.
-//          ' ': PAD (5)
-//          '-': 0
-//     'a', 'A': 1
-//     'c', 'C': 2
-//     'g', 'G': 3
+
+//     'a', 'A': 0
+//     'c', 'C': 1
+//     'g', 'G': 2
 //     't', 'T': 4
 static const int altranslate[256] = { 
    6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,6,
@@ -61,17 +55,17 @@ static const int altranslate[256] = {
 
 struct arg_t {
    char         tau;
-   int       * query;
+   char       * query;
    int         height;
 };
 
 class queue_item
 {
    public:
-      queue_item(int height){query = new int[height]; distance=0;};
-      queue_item(int height, int in_distance){query = new int[height]; distance=in_distance;};
+      queue_item(int height){query = new char[height]; distance=0;};
+      queue_item(int height, int in_distance){query = new char[height]; distance=in_distance;};
       int distance;
-      int * query;
+      char * query;
 };
 
 struct context_t
@@ -87,11 +81,10 @@ struct context_t
 int get_height(trie_t *);
 node_t *insert(node_t *, int);
 node_t *new_trienode(void);
-result_t *poucet(node_t *, int, int*, char*, struct arg_t);
-char * compute_ccache(char *, int *, int*, const int, const int);
-context_t * context(trie_t *, int*, const int, const int);
+result_t *poucet(node_t *, int, char*, char*, struct arg_t);
+char * compute_ccache(char *, char*, char*, const int, const int);
+context_t * context(trie_t *, char*, const int, const int);
 
-// Globals.
 int ERROR = 0;
 
 int get_height(trie_t *trie) { return trie->height; }
@@ -99,17 +92,17 @@ int get_height(trie_t *trie) { return trie->height; }
 // ------  SEARCH FUNCTIONS ------ //
 result_t *quick_search(trie_t *trie, const char *query, const int tau, const int max_depth)
 {
-   int height = get_height(trie);
-   int length = strlen(query);
+   const int height = get_height(trie);
+   const int length = strlen(query);
    // Translate symbols to integers
-   int translated[M];
+   char translated[M];
    translated[length] = EOS;
    for (int i = 0; i < length; i++)
    {
       translated[i] = altranslate[(int)query[i]];
    }
    node_t *start_node = trie->root;
-   int out[length];
+   // char out[length];
 
    queue<queue_item*> q;
    queue_item * input = new queue_item(height);
@@ -135,13 +128,13 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
       if (context_out->error)
       {
          // Found unmatching during traversal
-         int pos = context_out->depth;
+         const int pos = context_out->depth;
          // Insertion fix
          for(int i=0; i<4; i++)
          {
             if(!context_out->ins[i])continue;
             queue_item * new_input = new queue_item(height, cur_input->distance+1);
-            int *new_query = new_input->query;
+            char *new_query = new_input->query;
             for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
             for(int j=pos;j<height-1;j++)new_query[j] = cur_input->query[j+1];
             new_query[height-1] = 0; // Add a PAD to the end
@@ -152,7 +145,7 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
          {
             if(!context_out->del[i])continue;
             queue_item * new_input = new queue_item(height, cur_input->distance+1);
-            int *new_query = new_input->query;
+            char *new_query = new_input->query;
             for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
             new_query[pos] = i;
             for(int j=pos+1;j<height;j++)new_query[j] = cur_input->query[j-1];
@@ -163,7 +156,7 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
          {
             if(!context_out->sub[i])continue;
             queue_item * new_input = new queue_item(height, cur_input->distance+1);
-            int *new_query = new_input->query;
+            char *new_query = new_input->query;
             for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
             new_query[pos] = i;
             for(int j=pos+1;j<height;j++)new_query[j] = cur_input->query[j];
@@ -185,7 +178,7 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
    return result;
 }
 
-context_t * context(trie_t *trie, int * query, const int height, const int max_depth)
+context_t * context(trie_t *trie, char * query, const int height, const int max_depth)
 {
    node_t *node = trie->root;
    context_t *out = new context_t;
@@ -255,13 +248,13 @@ context_t * context(trie_t *trie, int * query, const int height, const int max_d
    return out;
 }
 
-result_t *search(trie_t *trie, const char *query, const int tau)
+result_t *poucet_search(trie_t *trie, const char *query, const int tau)
 {
-   int height = get_height(trie);
-   int length = strlen(query);
+   const int height = get_height(trie);
+   const int length = strlen(query);
 
    // Translate symbols to integers
-   int translated[M];
+   char translated[M];
    translated[length] = EOS;
    for (int i = 0; i < length; i++)
    {
@@ -275,7 +268,7 @@ result_t *search(trie_t *trie, const char *query, const int tau)
    arg.height = height;
 
    node_t *start_node = trie->root;
-   int out[length];
+   char out[length];
    
    // Initialize cache
    char cache[2 * tau + 1];
@@ -285,7 +278,7 @@ result_t *search(trie_t *trie, const char *query, const int tau)
    return poucet(start_node, 0, out, cache, arg);
 }
 
-char *compute_ccache(char *pcache, int *inp, int *out, const int depth, const int tau)
+char *compute_ccache(char *pcache, char *inp, char *out, const int depth, const int tau)
 {
    const int n = 2 * tau + 1;
    char *ccache = (char *)malloc(n);
@@ -315,18 +308,18 @@ char *compute_ccache(char *pcache, int *inp, int *out, const int depth, const in
       for (int i = offset + 1; i < tau; i++)
       {
          // Horizental arm
-         int hshift = min(ccache[i - 1] + 1, pcache[i + 1] + 1);
+         const int hshift = min(ccache[i - 1] + 1, pcache[i + 1] + 1);
          delta = out[depth] != inp[i - offset - 1];
          ccache[i] = min(pcache[i] + delta, hshift);
          // Vertical arm
-         int j = n - i - 1;
-         int vshift = min(ccache[j + 1] + 1, pcache[j - 1] + 1);
+         const int j = n - i - 1;
+         const int vshift = min(ccache[j + 1] + 1, pcache[j - 1] + 1);
          delta = out[i - offset - 1] != inp[depth];
          ccache[j] = min(pcache[j] + delta, vshift);
       }
    }
    // Center cell
-   int shift = min(ccache[tau - 1] + 1, ccache[tau + 1] + 1);
+   const int shift = min(ccache[tau - 1] + 1, ccache[tau + 1] + 1);
    if (depth + 1 > tau)
       ccache[tau] = min(pcache[tau] + (out[depth] != inp[tau - 1]), shift);
    else
@@ -334,7 +327,7 @@ char *compute_ccache(char *pcache, int *inp, int *out, const int depth, const in
    return ccache;
 }
 
-result_t *poucet(node_t *node, const int depth, int *out, char *pcache, struct arg_t arg)
+result_t *poucet(node_t *node, const int depth, char *out, char *pcache, struct arg_t arg)
 {
    // This makes it easier to distinguish the part that goes upward,
    // with positive index and requiring the path, from the part that
@@ -346,7 +339,7 @@ result_t *poucet(node_t *node, const int depth, int *out, char *pcache, struct a
    // Exceed threshold
    if (pcache[tau] > tau || depth > arg.height)
    {
-      result->distance = pcache[tau];
+      // result->distance = pcache[tau];
       return result;
    }
  
@@ -360,12 +353,13 @@ result_t *poucet(node_t *node, const int depth, int *out, char *pcache, struct a
    // Update cache edge
    if (depth < tau)
    {
-      pcache[tau - depth - 1] = depth + 1;
-      pcache[tau + depth + 1] = depth + 1;
+      const int edge = depth + 1;
+      pcache[tau - edge] = edge;
+      pcache[tau + edge] = edge;
    }
 
    node_t *child;
-   int *inp = arg.query + max(0, depth + 1 - tau);
+   char *inp = arg.query + max(0, depth + 1 - tau);
    int next_ind = arg.query[depth];
 
    // If node exist for the query[depth]
@@ -374,7 +368,7 @@ result_t *poucet(node_t *node, const int depth, int *out, char *pcache, struct a
       out[depth] = next_ind;
       char * ccache = compute_ccache(pcache, inp, out, depth, tau);
       result_t *tmp_result = poucet(child, depth + 1, out, ccache, arg);
-      if (tmp_result->label != -1)
+      if (tmp_result->label != 0)
          return tmp_result;
    }
 
@@ -387,7 +381,7 @@ result_t *poucet(node_t *node, const int depth, int *out, char *pcache, struct a
       out[depth] = i;
       char * ccache = compute_ccache(pcache, inp, out, depth, tau);
       result_t *tmp_result = poucet(child, depth + 1, out, ccache, arg);
-      if (tmp_result->label != -1)
+      if (tmp_result->label != 0)
          return tmp_result;
    }
    // There is no more node for traversal
@@ -396,7 +390,7 @@ result_t *poucet(node_t *node, const int depth, int *out, char *pcache, struct a
 
 // ------  TRIE CONSTRUCTION AND DESTRUCTION  ------ //
 
-trie_t * new_trie(unsigned int height)
+trie_t * new_trie(const unsigned int height)
 // SYNOPSIS:                                                              
 //   Front end trie constructor.                                          
 //                                                                        
@@ -453,24 +447,15 @@ node_t * new_trienode(void)
       return NULL;
    }
 
-   // Initialize the cache. This is important for the
-   // dynamic programming algorithm.
-   // const char init[] = {8,7,6,5,4,3,2,1,0,1,2,3,4,5,6,7,8};
-   // memcpy(node->cache, init, 2*TAU+1);
    return node;
 
 }
 
-void insert_string(trie_t *trie, const char *string, long label)
+void insert_string(trie_t *trie, const char *string, const long label)
 // SYNOPSIS:                                                              
 //   Front end function to fill in a trie. Insert a string from root, or  
 //   simply return the node at the end of the string path if it already   
 //   exists.                                                              
-//                                                                        
-// RETURN:                                                                
-//   The leaf node in case of succes, 'NULL' otherwise.                   
-//                                                                        
-// NB: This function is not used by 'starcode()'.
 {
 
    int i;
@@ -488,7 +473,7 @@ void insert_string(trie_t *trie, const char *string, long label)
    for (i = 0; i < nchar; i++)
    {
       node_t *child;
-      int c = translate[(int)string[i]];
+      const int c = translate[(int)string[i]];
       if ((child = (node_t *)node->child[c]) == NULL)
       {
          break;
@@ -499,7 +484,7 @@ void insert_string(trie_t *trie, const char *string, long label)
    // Append more nodes.
    for (; i < nchar; i++)
    {
-      int c = translate[(int)string[i]];
+      const int c = translate[(int)string[i]];
       node = insert(node, c);
       if (node == NULL)
       {
@@ -527,11 +512,6 @@ node_t * insert(node_t *parent, int position)
 // PARAMETERS:
 //   parent: the parent to append the node to
 //   position: the position of the child
-//
-// RETURN:
-//   The appended child node in case of success, 'NULL' otherwise.
-//
-// NB: This function is not used by 'starcode()'.
 {
    // Initilalize child node.
    node_t *child = new_trienode();
@@ -542,7 +522,6 @@ node_t * insert(node_t *parent, int position)
       return NULL;
    }
    // Update parent node.
-   child->ch_num = position;
    parent->child[position] = child;
    return child;
 }
