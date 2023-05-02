@@ -10,7 +10,7 @@ import sys
 
 config_dict={
     "end_tree_len" : 21,
-    "tree_threshold" : 3,
+    "tree_threshold" : 4,
     "sub_tree_threshold" : 2,
     "h_index_nums" : 0,
     "processes_nums" : 1,
@@ -20,7 +20,7 @@ config_dict={
     "hash_threshold" : 3,
     "use_index": False,
     "index_file": '',
-    "train_num": 10000
+    "frac": 0,
 }
 
 #Read input info
@@ -47,8 +47,8 @@ Options:
 -P number of processors
 -S number of extra stages of clustering
 -F index file path
--A length of anchor
--R length of hash
+-T fraction of data enables merging
+-A starting index
 --multi-stage enable multistage clustering 
 '''
 def out_put_config():
@@ -71,28 +71,19 @@ def out_put_config():
             config_dict['multi_stage'] = True
             config_dict['extra_stage_num'] = int(opt_value)
         if '-A' in opt_name:
-            config_dict['anchor_len'] = int(opt_value)
-        if '-R' in opt_name:
-            config_dict['hash_len'] = int(opt_value)
+            config_dict['h_index_nums'] = int(opt_value)
         if '-F' in opt_name:
             config_dict['index_file'] = opt_value
             config_dict['use_index'] = True
         if '-T' in opt_name:
-            config_dict['train_num'] = int(opt_value)
+            config_dict['frac'] = float(opt_value)
         if 'multi-stage' in opt_name:
             config_dict['multi_stage'] = True
             if 'extra_stage_num' not in config_dict.keys():
                 config_dict['extra_stage_num'] = 1
     config_dict['tag']="""
     
- _____  _      _   _  _____  _____  _____ ______  _____  _   _  _____      ______  _____ ___  ___ _____ 
-/  __ \| |    | | | |/  ___||_   _||  ___|| ___ \|_   _|| \ | ||  __ \     |  _  \|  ___||  \/  ||  _  |
-| /  \/| |    | | | |\ `--.   | |  | |__  | |_/ /  | |  |  \| || |  \/     | | | || |__  | .  . || | | |
-| |    | |    | | | | `--. \  | |  |  __| |    /   | |  | . ` || | __      | | | ||  __| | |\/| || | | |
-| \__/\| |____| |_| |/\__/ /  | |  | |___ | |\ \  _| |_ | |\  || |_\ \     | |/ / | |___ | |  | |\ \_/ /
- \____/\_____/ \___/ \____/   \_/  \____/ \_| \_| \___/ \_| \_/ \____/     |___/  \____/ \_|  |_/ \___/ 
-                                                                                                    
-                                                                                                    
+    Depth-Limited Searching for DNA Clustering                                                             
 
     """
     return config_dict

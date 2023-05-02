@@ -1,5 +1,6 @@
 import matplotlib.pyplot as plt
 import scienceplots
+import numpy as np
 plt.style.use('ieee')
 
 def plot_hist(ax, x, y, label):

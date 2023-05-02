@@ -89,6 +89,31 @@ int ERROR = 0;
 
 int get_height(trie_t *trie) { return trie->height; }
 
+// ------  CLUSTERING FUNCTIONS ------ //
+unsigned long Process::cluster(const char * input)
+{
+   if(strlen(input)<=Process::tree_depth)return ++clust_num;
+   result_t *search_result = quick_search(Process::main_trie, input, Process::main_tree_threshold, Process::depth_limit);
+   // Found a matching
+   if(search_result->label>0)return search_result->label;
+   
+   search_result = poucet_search(Process::sub_trie, input, Process::sub_tree_threshold);
+   
+   unsigned long new_label;
+   char sub_string[Process::tree_depth];
+   for(int i=0; i<Process::tree_depth; i++)sub_string[i]=input[i];
+
+   if(search_result->label>0)new_label = search_result->label;
+   else
+   {
+      Process::clust_num++;
+      new_label = clust_num;
+      insert_string(Process::sub_trie, sub_string, new_label);
+   }
+   insert_string(Process::main_trie, sub_string, new_label);
+   return new_label;
+}
+
 // ------  SEARCH FUNCTIONS ------ //
 result_t *quick_search(trie_t *trie, const char *query, const int tau, const int max_depth)
 {
@@ -451,7 +476,7 @@ node_t * new_trienode(void)
 
 }
 
-void insert_string(trie_t *trie, const char *string, const long label)
+void insert_string(trie_t *trie, const char *string, const unsigned long label)
 // SYNOPSIS:                                                              
 //   Front end function to fill in a trie. Insert a string from root, or  
 //   simply return the node at the end of the string path if it already   
@@ -461,6 +486,7 @@ void insert_string(trie_t *trie, const char *string, const long label)
    int i;
 
    int nchar = strlen(string);
+
    if (nchar != get_height(trie)) {
       fprintf(stderr, "error: can only insert string of length %d\n",
             get_height(trie));

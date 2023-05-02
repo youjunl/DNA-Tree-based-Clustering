@@ -3,10 +3,10 @@
 # to the root binary directory of the project as ${HELLO_BINARY_DIR}.
 cmake_minimum_required(VERSION 3.24)
 project(tree)
+set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 include_directories(pybind11/include)
 include_directories(E:/Python310/include)
 add_subdirectory(pybind11)
-
 add_compile_options(-static-libgcc -static-libstdc++)
 # Build tree module
 add_library(trie trie.cpp)
