@@ -10,7 +10,9 @@ def compute(infile):
     line = f.readline()
     gamma = list(map(float, line.strip().split(',')[1:-1]))
     line = f.readline()
-    clust_acc = list(map(float, line.strip().split(',')[1:-1]))
+    dls_acc = list(map(float, line.strip().split(',')[1:-1]))
+    line = f.readline()
+    dlsm_acc = list(map(float, line.strip().split(',')[1:-1]))
     line = f.readline()
     clover_acc = list(map(float, line.strip().split(',')[1:-1]))
     line = f.readline()
@@ -18,17 +20,18 @@ def compute(infile):
     line = f.readline()
     mmseqs_acc = list(map(float, line.strip().split(',')[1:-1]))
     f.close()
-    return gamma, clust_acc, clover_acc, starcode_acc, mmseqs_acc
+    return gamma, dls_acc, dlsm_acc, clover_acc, starcode_acc, mmseqs_acc
 
 if __name__ == '__main__':
     fig, ax = plt.subplots(1,3, sharey=True, figsize=[8, 3])
     labels = ['(a)', '(b)', '(c)']
     for i in range(3):
-        gamma, clust_acc, clover_acc, starcode_acc, mmseqs_acc = compute(files[i])
-        ax[i].plot(gamma, clust_acc, label='Proposed')
+        gamma, dls_acc, dlsm_acc, clover_acc, starcode_acc, mmseqs_acc = compute(files[i])
+        ax[i].plot(gamma, dls_acc, label='DLS')
+        ax[i].plot(gamma, dlsm_acc, label='DLSM')
         ax[i].plot(gamma, clover_acc, label='Clover')
         ax[i].plot(gamma, starcode_acc, label='Starcode')
-        ax[i].plot(gamma, mmseqs_acc, label='MMSeqs2')
+        ax[i].plot(gamma, mmseqs_acc, 'y', label='MMSeqs2')
         ax[i].grid(which='both')
         ax[i].set_xlim(0, 1)
         ax[i].set_aspect(1)

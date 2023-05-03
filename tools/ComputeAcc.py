@@ -38,8 +38,8 @@ def compute(fileIn, tags, clustNum, gamma):
     for i in range(len(results)):
         clusters[results[i][1]-1].append(results[i][0])
 
-    # Remove empty clusters
-    clusters = [c for c in clusters if c != []]
+    # Remove empty clusters and cluster that size = 1
+    clusters = [c for c in clusters if len(c)>1]
     # clusters = [c for c in clusters if len(c)>1]
     # A list that stores the maximum size of correct clustering for different tags.
     score = [0] * max(clustNum.keys())
@@ -62,7 +62,7 @@ def compute(fileIn, tags, clustNum, gamma):
             if clustNum[tag] > 1 and score[tag-1] / clustNum[tag] >= g:
                 cnt += 1
         acc[i] = cnt / nClust
-    print('Num cluster: %d. Inp cluster: %d'%(len(clustNum.keys()), len(clusters)))
+    print('Num cluster: %d. Inp cluster: %d'%(nClust, len(clusters)))
     return acc
 
 if __name__ == '__main__':
@@ -101,10 +101,13 @@ if __name__ == '__main__':
     clustNum = defaultdict(int)
     lines = open(labeled, 'r').readlines()
     tags = [-1 for _ in range(int(lines[-1].split(',')[0]))]
-    for text in lines:
-        ind, tag = map(int, text.strip().split(','))
-        clustNum[tag] += 1
-        tags[ind-1] = tag
+    with open(labeled, 'r') as f:
+        text = f.readline()
+        while text != '':
+            ind, tag = map(int, text.strip().split(','))
+            clustNum[tag] += 1
+            tags[ind-1] = tag
+            text = f.readline()
         
     # Compute accuracy for each input clustering indexes file
     print('Computing accuracy...')

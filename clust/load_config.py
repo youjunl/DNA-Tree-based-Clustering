@@ -15,8 +15,6 @@ config_dict={
     "h_index_nums" : 0,
     "processes_nums" : 1,
     "multi_stage": False,
-    "anchor_len" : 6,
-    "hash_len" : 11,
     "hash_threshold" : 3,
     "use_index": False,
     "index_file": '',
