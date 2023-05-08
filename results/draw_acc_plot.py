@@ -31,7 +31,7 @@ if __name__ == '__main__':
         ax[i].plot(gamma, dlsm_acc, label='DLSM')
         ax[i].plot(gamma, clover_acc, label='Clover')
         ax[i].plot(gamma, starcode_acc, label='Starcode')
-        ax[i].plot(gamma, mmseqs_acc, 'y', label='MMSeqs2')
+        ax[i].plot(gamma, mmseqs_acc, '--y', label='MMSeqs2')
         ax[i].grid(which='both')
         ax[i].set_xlim(0, 1)
         ax[i].set_aspect(1)

@@ -1,3 +1,5 @@
+iclust/
+clover/
 clust/__pycache__
 clover/__pycache__
 msclust/__pycache__
@@ -6,6 +8,4 @@ testdata/
 *.txt
 .vscode
 *.gv
-iclust/
-clover/
 *.csv

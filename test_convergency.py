@@ -33,7 +33,7 @@ class SingleProcess():
         self.config.index_begin = indexBegin
         self.config.main_tree_threshold = self.config_dict['tree_threshold']
         self.config.sub_tree_threshold = self.config_dict['sub_tree_threshold']
-        self.config.depth_limit = 3
+        self.config.depth_limit = self.config_dict['tree_threshold']
         self.alg = tree.Process(self.config)
 
     def cluster(self, dna_tag, dna_str):
@@ -41,7 +41,7 @@ class SingleProcess():
         # self.indexList.append((dna_tag, label))
         dna_str = dna_str[self.h_index:self.h_index+self.read_len]
         if len(dna_str) == self.read_len:
-            align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 4)
+            align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 3)
             label = align_result.label
 
             if label > 0:
@@ -88,6 +88,7 @@ class SingleProcess():
         # Get number of reads
         numReads = mapcount(self.infile)
         usage = [0 for _ in check_points]
+        clust_num = [0 for _ in check_points]
         step = numReads / (len(usage) - 1)
         print('Number of reads: %d'%numReads)
         with tqdm(total=numReads) as pbar:
@@ -106,17 +107,15 @@ class SingleProcess():
                         # Output the memory usage
                         ind = int(count//step)
                         usage[ind] = psutil.Process(os.getpid()).memory_info().rss / 1024 / 1024 / 1024
-
+                        clust_num[ind] = self.clust_num
                     count += 1
 
-        return usage
+        return usage, clust_num
 
 if __name__ == '__main__':
 
     dlsm = True
-    numReads = 10000000
-    tree_depth = 20
-
+    tree_depth = 16
     if not dlsm:
         # DLS configurations:
         config_dict={
@@ -125,7 +124,7 @@ if __name__ == '__main__':
             "sub_tree_threshold" : 1,
             "h_index_nums" : 0,
             "train_start": 0,
-            "train_end": 0
+            "train_end": 0,
         }
 
     else:
@@ -133,35 +132,43 @@ if __name__ == '__main__':
         config_dict={
             "end_tree_len" : tree_depth,
             "tree_threshold" : 4,
-            "sub_tree_threshold" : 1,
+            "sub_tree_threshold" : 3,
             "h_index_nums" : 0,
             "train_start": 0,
-            "train_end": numReads
+            "train_end": 100000000,
         }
 
-    infile = 'testdata/toClustReads_{}.txt'.format(numReads)
+    infile = 'testdata/randomReads_10000.txt'.format(tree_depth)
     if not dlsm:
-        cluster_file = 'ERR_{}_dls.txt'.format(numReads)
-        outfile = 'results/mem_usage_dls_{}.csv'.format(tree_depth)
+        cluster_file = 'random_10000_{}_dls.txt'.format(tree_depth)
     else:
-        cluster_file = 'ERR_{}_dlsm.txt'.format(numReads)
-        outfile = 'results/mem_usage_dlsm_{}.csv'.format(tree_depth)
+        cluster_file = 'random_10000_{}_dlsm.txt'.format(tree_depth)
+    outfile = 'log.csv'
 
-    check_points = [i for i in range(0, int(numReads+numReads/1000), int(numReads/1000))]
+    def mapcount(filename):
+        f = open(filename, "r+")
+        buf = mmap.mmap(f.fileno(), 0)
+        lines = 0
+        readline = buf.readline
+        while readline():
+            lines += 1
+        return lines
+
+    numReads = mapcount(infile)
+    check_points = [i for i in range(0, int(numReads+numReads//1000), int(numReads//1000))]
     main_tree = tree.new_tree(config_dict['end_tree_len'])
     sub_tree = tree.new_tree(config_dict['end_tree_len'])
     p = SingleProcess(infile, config_dict, main_tree, sub_tree)
-    usage = p.run(check_points, numReads)
-
-    if numReads == 10000000:
-        with open(outfile, 'w') as f:
-            f.truncate(0)
-            for pts in check_points:
-                f.write('%d,'%pts)
-            f.write('\n')
-            for pts in usage:
-                f.write('%.4f,'%pts)
-            f.write('\n')        
+    usage, clust_num = p.run(check_points, numReads)
+    
+    with open(outfile, 'w') as f:
+        f.truncate(0)
+        for pts in check_points:
+            f.write('%d,'%pts)
+        f.write('\n')
+        for pts in clust_num:
+            f.write('%d,'%pts)
+        f.write('\n')        
     
     with open(cluster_file, 'w') as f:
         f.truncate(0)

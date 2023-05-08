@@ -9,13 +9,13 @@ import getopt
 import sys
 
 config_dict={
-    "end_tree_len" : 21,
+    "end_tree_len" : 20,
     "tree_threshold" : 4,
-    "sub_tree_threshold" : 2,
+    "sub_tree_threshold" : 1,
+    "depth_limit" : 4,
     "h_index_nums" : 0,
     "processes_nums" : 1,
     "multi_stage": False,
-    "hash_threshold" : 3,
     "use_index": False,
     "index_file": '',
     "frac": 0,
@@ -46,7 +46,7 @@ Options:
 -S number of extra stages of clustering
 -F index file path
 -T fraction of data enables merging
--A starting index
+-A starting position
 --multi-stage enable multistage clustering 
 '''
 def out_put_config():

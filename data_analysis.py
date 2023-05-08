@@ -7,13 +7,13 @@ import cupy
 # inputTags = 'testdata/toClustTags.txt'
 # algResult = 'output_ERR1816980_clust.txt'
 
-inputReads = 'testdata/toClustSmallReads.txt'
-inputTags = 'testdata/toClustSmallTags.txt'
-algResult = 'output_file_Small_1.txt'
+# inputReads = 'testdata/toClustSmallReads.txt'
+# inputTags = 'testdata/toClustSmallTags.txt'
+# algResult = 'output_file_Small_1.txt'
 
-# inputReads = 'testdata/toClustRead_p10.txt'
-# inputTags = 'testdata/toClustTag_p10.txt'
-# algResult = 'output_file_P10_clust.txt'
+inputReads = 'testdata/toClustRead_p10.txt'
+inputTags = 'testdata/toClustTag_p10.txt'
+algResult = 'output_file_P10_clust_dlsm.txt'
 
 # inputReads = 'testdata/toClustRead_id20.txt'
 # inputTags = 'testdata/toClustTag_id20.txt'

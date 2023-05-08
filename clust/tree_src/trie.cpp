@@ -82,7 +82,7 @@ int get_height(trie_t *);
 node_t *insert(node_t *, int);
 node_t *new_trienode(void);
 result_t *poucet(node_t *, int, char*, char*, struct arg_t);
-char * compute_ccache(char *, char*, char*, const int, const int);
+void compute_ccache(char *, char *, char*, char*, const int, const int);
 context_t * context(trie_t *, char*, const int, const int);
 
 int ERROR = 0;
@@ -102,7 +102,6 @@ unsigned long Process::cluster(const char * input)
    unsigned long new_label;
    char sub_string[Process::tree_depth];
    for(int i=0; i<Process::tree_depth; i++)sub_string[i]=input[i];
-
    if(search_result->label>0)new_label = search_result->label;
    else
    {
@@ -155,16 +154,16 @@ result_t *quick_search(trie_t *trie, const char *query, const int tau, const int
          // Found unmatching during traversal
          const int pos = context_out->depth;
          // Insertion fix
-         for(int i=0; i<4; i++)
+         if(context_out->ins[0])
          {
-            if(!context_out->ins[i])continue;
             queue_item * new_input = new queue_item(height, cur_input->distance+1);
             char *new_query = new_input->query;
             for(int j=0;j<pos;j++)new_query[j] = cur_input->query[j];
             for(int j=pos;j<height-1;j++)new_query[j] = cur_input->query[j+1];
             new_query[height-1] = 0; // Add a PAD to the end
-            q.push(new_input);
+            q.push(new_input);               
          }
+         
          // Deletion fix
          for(int i=0; i<4; i++)
          {
@@ -217,9 +216,20 @@ context_t * context(trie_t *trie, char * query, const int height, const int max_
          // Pretend overflow
          int depth;
          const int search_depth = min(height-i-1, max_depth);
+         node_t *tmp_node;
+
+         // Insertion
+         depth = 0;
+         tmp_node = node;
+         while (depth<search_depth-1)
+         {
+            if((tmp_node=tmp_node->child[query[i+depth+1]]) == NULL)break;
+            depth++;
+         }
+         if (depth == search_depth-1)out->ins[0] = true;
+
          for(int node_num = 0; node_num<4; node_num++)
          {
-            node_t *tmp_node;
             if(node->child[node_num] != NULL)
             {
                // Deletion
@@ -231,16 +241,6 @@ context_t * context(trie_t *trie, char * query, const int height, const int max_
                   depth++;
                }
                if (depth == search_depth)out->del[node_num] = true;
-
-               // Insertion
-               depth = 0;
-               tmp_node = node;
-               while (depth<search_depth-1)
-               {
-                  if((tmp_node=tmp_node->child[query[i+depth+1]]) == NULL)break;
-                  depth++;
-               }
-               if (depth == search_depth-1)out->ins[node_num] = true;
 
                // Substitution
                depth = 0;
@@ -303,12 +303,12 @@ result_t *poucet_search(trie_t *trie, const char *query, const int tau)
    return poucet(start_node, 0, out, cache, arg);
 }
 
-char *compute_ccache(char *pcache, char *inp, char *out, const int depth, const int tau)
+void compute_ccache(char * ccache, char *pcache, char *inp, char *out, const int depth, const int tau)
 {
    const int n = 2 * tau + 1;
-   char *ccache = (char *)malloc(n);
+   // char *ccache = (char *)malloc(n);
    int delta;
-   for (int i = 0; i < 2 * tau + 1; i++)
+   for (int i = 0; i < n; i++)
       ccache[i] = pcache[i];
    if (depth + 1 > tau)
    {
@@ -349,7 +349,7 @@ char *compute_ccache(char *pcache, char *inp, char *out, const int depth, const 
       ccache[tau] = min(pcache[tau] + (out[depth] != inp[tau - 1]), shift);
    else
       ccache[tau] = min(pcache[tau] + (out[depth] != inp[depth]), shift);
-   return ccache;
+   return;
 }
 
 result_t *poucet(node_t *node, const int depth, char *out, char *pcache, struct arg_t arg)
@@ -385,13 +385,14 @@ result_t *poucet(node_t *node, const int depth, char *out, char *pcache, struct 
 
    node_t *child;
    char *inp = arg.query + max(0, depth + 1 - tau);
+   char ccache[2 * tau + 1];
    int next_ind = arg.query[depth];
 
    // If node exist for the query[depth]
    if ((child = node->child[next_ind]) != NULL)
    {
       out[depth] = next_ind;
-      char * ccache = compute_ccache(pcache, inp, out, depth, tau);
+      compute_ccache(ccache, pcache, inp, out, depth, tau);
       result_t *tmp_result = poucet(child, depth + 1, out, ccache, arg);
       if (tmp_result->label != 0)
          return tmp_result;
@@ -404,7 +405,7 @@ result_t *poucet(node_t *node, const int depth, char *out, char *pcache, struct 
       if (i == next_ind || (child = node->child[i]) == NULL)
          continue;
       out[depth] = i;
-      char * ccache = compute_ccache(pcache, inp, out, depth, tau);
+      compute_ccache(ccache, pcache, inp, out, depth, tau);
       result_t *tmp_result = poucet(child, depth + 1, out, ccache, arg);
       if (tmp_result->label != 0)
          return tmp_result;
@@ -431,14 +432,7 @@ trie_t * new_trie(const unsigned int height)
       ERROR = __LINE__;
       return NULL;
    }
-
    trie_t *trie = new trie_t;
-   if (trie == NULL) {
-      fprintf(stderr, "error: could not create trie\n");
-      ERROR = __LINE__;
-      return NULL;
-   }
-
    node_t *root = new_trienode();
    if (root == NULL) {
       fprintf(stderr, "error: could not create root\n");
@@ -455,45 +449,22 @@ trie_t * new_trie(const unsigned int height)
 
 }
 
-node_t * new_trienode(void)
-// SYNOPSIS:                                                              
-//   Back end constructor for a trie node. All values are initialized to  
-//   null, except the cache for dynamic programming which is initialized  
-//   as a root node.                                                      
-//                                                                        
-// RETURN:                                                                
-//   A pointer to trie node with no data and no children.                 
+node_t * new_trienode(void)            
 {
-
    node_t *node = new node_t;
-   if (node == NULL) {
-      fprintf(stderr, "error: could not create trie node\n");
-      ERROR = __LINE__;
-      return NULL;
-   }
-
    return node;
-
 }
 
-void insert_string(trie_t *trie, const char *string, const unsigned long label)
-// SYNOPSIS:                                                              
-//   Front end function to fill in a trie. Insert a string from root, or  
-//   simply return the node at the end of the string path if it already   
-//   exists.                                                              
+void insert_string(trie_t *trie, const char *string, const unsigned long label)                                                          
 {
-
    int i;
-
    int nchar = strlen(string);
-
    if (nchar != get_height(trie)) {
       fprintf(stderr, "error: can only insert string of length %d\n",
             get_height(trie));
       ERROR = __LINE__;
       return;
    }
-   
    // Find existing path.
    node_t *node = trie->root;
    for (i = 0; i < nchar; i++)

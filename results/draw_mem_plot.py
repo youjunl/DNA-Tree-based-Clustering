@@ -3,8 +3,8 @@ import scienceplots
 plt.style.use('ieee')
 
 if __name__ == '__main__':
-    dls_files = ['mem_usage_dls_13.csv','mem_usage_dls_17.csv','mem_usage_dls_21.csv']
-    dlsm_files = ['mem_usage_dlsm_13.csv','mem_usage_dlsm_17.csv','mem_usage_dlsm_21.csv']
+    dls_files = ['mem_usage_dls_16.csv','mem_usage_dls_18.csv','mem_usage_dls_20.csv']
+    dlsm_files = ['mem_usage_dlsm_16.csv','mem_usage_dlsm_18.csv','mem_usage_dlsm_20.csv']
     check_points = []
     dls_data = []
     dlsm_data = []
@@ -20,13 +20,13 @@ if __name__ == '__main__':
         dlsm_data.append(data)
 
     fig, ax = plt.subplots(1, 2, figsize=[8,4])
-    ax[0].plot(check_points, dls_data[0], label = 'DLS L=13')
-    ax[0].plot(check_points, dls_data[1], label = 'DLS L=17')
-    ax[0].plot(check_points, dls_data[2], label = 'DLS L=21')
+    ax[0].plot(check_points, dls_data[0], label = 'DLS L=16')
+    ax[0].plot(check_points, dls_data[1], label = 'DLS L=18')
+    ax[0].plot(check_points, dls_data[2], label = 'DLS L=20')
 
-    ax[1].plot(check_points, dlsm_data[0], label = 'DLSM L=13')
-    ax[1].plot(check_points, dlsm_data[1], label = 'DLSM L=17')
-    ax[1].plot(check_points, dlsm_data[2], label = 'DLSM L=21')
+    ax[1].plot(check_points, dlsm_data[0], label = 'DLSM L=16')
+    ax[1].plot(check_points, dlsm_data[1], label = 'DLSM L=18')
+    ax[1].plot(check_points, dlsm_data[2], label = 'DLSM L=20')
 
     ax[0].grid()
     ax[1].grid()

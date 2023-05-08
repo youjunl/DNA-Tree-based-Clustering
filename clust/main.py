@@ -30,12 +30,15 @@ class SingleProcess():
         self.clust_num = indexBegin
         self.merge_end = 0
         self.read_num = 0
+        self.depth_limit = self.config_dict['depth_limit']
+        self.main_tree_th = self.config_dict['tree_threshold']
+        self.sub_tree_th = self.config_dict['sub_tree_threshold']
         # self.config = tree.Config()
         # self.config.tree_depth = self.read_len
         # self.config.index_begin = indexBegin
         # self.config.main_tree_threshold = self.config_dict['tree_threshold']
         # self.config.sub_tree_threshold = self.config_dict['sub_tree_threshold']
-        # self.config.depth_limit = 3
+        # self.config.depth_limit = self.config_dict['depth_limit']
         # self.alg = tree.Process(self.config)
 
     def cluster(self, dna_tag, dna_str):
@@ -43,7 +46,7 @@ class SingleProcess():
         # self.indexList.append((dna_tag, label))
         dna_str = dna_str[self.h_index:self.h_index+self.read_len]
         if len(dna_str) == self.read_len:
-            align_result = tree.quick_search(self.tree, dna_str, self.config_dict['tree_threshold'], 4)
+            align_result = tree.quick_search(self.tree, dna_str, self.main_tree_th, self.depth_limit)
             label = align_result.label
 
             if label > 0:
@@ -52,7 +55,7 @@ class SingleProcess():
                 # Check umatched sequence in subtree
                 if dna_tag < self.merge_end:
                     sub_dna_str = dna_str[:self.sub_tree_depth]
-                    sub_align_result = tree.search(self.sub_tree, sub_dna_str, self.config_dict['sub_tree_threshold'])
+                    sub_align_result = tree.search(self.sub_tree, sub_dna_str, self.sub_tree_th)
                     if sub_align_result.label > 0:
                         new_label = sub_align_result.label
 
@@ -70,20 +73,32 @@ class SingleProcess():
             self.indexList.append((dna_tag, self.clust_num))
 
     def cluster_with_index(self, dna_tag, dna_str):
-        if self.h_index == 0:
-            dna_str = dna_str[:self.read_len]
-        else:
-            dna_str = dna_str[self.h_index:self.h_index+self.read_len]
+        dna_str = dna_str[self.h_index:self.h_index+self.read_len]
+        if len(dna_str) == self.read_len:
+            align_result = tree.quick_search(self.tree, dna_str, self.main_tree_th, self.depth_limit)
+            label = align_result.label
 
-        align_result = tree.search(self.tree, dna_str, self.config_dict['tree_threshold'])
+            if label > 0:
+                self.indexList.append((dna_tag, label))
+            else:
+                # Check umatched sequence in subtree
+                if dna_tag < self.merge_end:
+                    sub_dna_str = dna_str[:self.sub_tree_depth]
+                    sub_align_result = tree.search(self.sub_tree, sub_dna_str, self.sub_tree_th)
+                    if sub_align_result.label > 0:
+                        new_label = sub_align_result.label
 
-        # If the match is successful, it is recorded.
-        if align_result[1] < self.config_dict['tree_threshold']:
-            self.indexList.append((dna_tag, align_result[0]))
-
+                    else:
+                        self.clust_num += 1
+                        new_label = self.clust_num
+                        tree.insert(self.sub_tree, sub_dna_str, new_label)
+                else:
+                    self.clust_num += 1
+                    new_label = self.clust_num                    
+                #tree.insert(self.tree, dna_str, new_label)
+                self.indexList.append((dna_tag, new_label))
         else:
             self.clust_num += 1
-            self.tree.insert(dna_str[:self.read_len], self.clust_num)
             self.indexList.append((dna_tag, self.clust_num))
 
     def run(self):
@@ -110,12 +125,6 @@ def chunks(arr, m):
 def clust(data, config_dict):
     p = SingleProcess(data, config_dict)
     return p.run()
-
-def clustMP(infile, config_dict, indexList, indexBegin):
-    p = SingleProcess(infile, config_dict, indexBegin)
-    p.run()
-    for i, index in enumerate(p.indexList):
-        indexList[indexBegin + i] = index
 
 if __name__ == '__main__':
     config_dict = lc.out_put_config()

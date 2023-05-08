@@ -23,3 +23,7 @@ if __name__ == '__main__':
     plt.gcf().set_dpi(300)
     plt.savefig('number_of_amplified_sequences.pdf')
     plt.show()
+
+    print(sum(l1))
+    print(sum(l2))
+    print(sum(l3))
