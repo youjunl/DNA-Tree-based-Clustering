@@ -14,7 +14,6 @@ config_dict={
     "sub_tree_threshold" : 1,
     "depth_limit" : 4,
     "h_index_nums" : 0,
-    "processes_nums" : 1,
     "multi_stage": False,
     "use_index": False,
     "index_file": '',
@@ -34,6 +33,7 @@ def load_json(path):
 #Write the input to config.json
 helpInfo = '''
 DNA Tree Based Clustering
+Latest Update: 2023-5-26
 #################################
 Command: python -m clust.main -I [input file] -O [output_file] ... [options]
 -I file to be clustered
@@ -42,15 +42,13 @@ Command: python -m clust.main -I [input file] -O [output_file] ... [options]
 Options:
 -D tree depth
 -H tree threshold
--P number of processors
--S number of extra stages of clustering
+-S secondary tree threshold
 -F index file path
 -T fraction of data enables merging
 -A starting position
---multi-stage enable multistage clustering 
 '''
 def out_put_config():
-    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-A:-R:-F:-T:-h',['help', 'multi-stage'])
+    opt,args = getopt.getopt(sys.argv[1:],'-I:-S:-H:-D:-P:-O:-A:-R:-F:-T:-h',['help'])
 
     for opt_name,opt_value in opt :
         if '-h' in opt_name or '--help' in opt_name:
@@ -59,15 +57,12 @@ def out_put_config():
             config_dict['input_path'] = opt_value
         if '-H' in opt_name :
             config_dict['tree_threshold'] = int(opt_value)
-        if '-P' in opt_name :
-            config_dict['processes_nums'] = int(opt_value)
         if '-O' in opt_name :
             config_dict['output_file'] = opt_value
         if '-D' in opt_name :
             config_dict['end_tree_len'] = int(opt_value)
         if '-S' in opt_name:
-            config_dict['multi_stage'] = True
-            config_dict['extra_stage_num'] = int(opt_value)
+            config_dict['sub_tree_threshold'] = int(opt_value)
         if '-A' in opt_name:
             config_dict['h_index_nums'] = int(opt_value)
         if '-F' in opt_name:

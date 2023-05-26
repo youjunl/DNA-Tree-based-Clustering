@@ -1,6 +1,6 @@
 import random
 import numpy as np
-
+from clust import tree
 num2dna = ['A', 'T', 'G', 'C']
 dna2num = {
     'A': '00',
@@ -55,43 +55,53 @@ def screen_gc(data):
         return 0
     return 1 # pass
 
-def gen_random_data(n_cluster, n_repeat, extra, pi, pd, ps):
+def screen_edit(index, trie, trie_th):
+    align = tree.search(trie, index, trie_th)
+    if align.label > 0:
+        return 0
+    else:
+        return 1 # pass
+
+def gen_random_data(n_cluster, n_repeat, extra, pi, pd, ps, dist=0):
     state = 0b001
     mask = 0b100000000000000000000000011000101
     psnr = lfsr(state, mask)
     data = []
     clInds = []
-    dna_dict = {}
+    trie = tree.new_tree(16)
+    random.seed(255)
     for i in range(n_cluster):
         seed = '{:032b}'.format(next(psnr))
-        tx = ''
-        for j in range(16):
-            tx += num2dna[int(seed[j * 2:j * 2 + 2], 2)]
+        payload = ''
         for j in range(extra):
-            tx += num2dna[random.randint(0, 3)]
+            payload += num2dna[random.randint(0, 3)]
 
-        while not (screen_homopolymers(tx, pattern) and screen_gc(tx) and tx[:16] not in dna_dict.keys()):
+        index = ''
+        for j in range(16):
+            index += num2dna[int(seed[j * 2:j * 2 + 2], 2)]
+        invalid = not(screen_homopolymers(index, pattern) and screen_gc(index) and screen_edit(index, trie, dist))
+        while invalid:
             seed = '{:032b}'.format(next(psnr))
-            tx = ''
+            index = ''
             for j in range(16):
-                tx += num2dna[int(seed[j * 2:j * 2 + 2], 2)]
-            for j in range(extra):
-                tx += num2dna[random.randint(0, 3)]
-        dna_dict[tx[:16]] = True
+                index += num2dna[int(seed[j * 2:j * 2 + 2], 2)]
+            invalid = not(screen_homopolymers(index, pattern) and screen_gc(index) and screen_edit(index, trie, dist))
+        tx = index + payload
         rxs = channel([tx for _ in range(n_repeat)], pi, pd, ps)
         data.extend(rxs)
         clInds.extend([i + 1 for _ in range(n_repeat)])
-    print(len(dna_dict.keys()))
+        print(i)
     return data, clInds
 
 if __name__ == '__main__':
 
-    data_file = 'testdata/randomReads_10000.txt'
-    clust_file = 'testdata/randomTags_10000.txt'
-    data, tags = gen_random_data(10000, 20, 10, 0.01, 0.01, 0.01)
+    data_file = 'testdata/randomReads_10000_dist_3.txt'
+    clust_file = 'testdata/randomTags_10000_dist_3.txt'
+    data, tags = gen_random_data(10000, 20, 10, 0.01, 0.01, 0.01, dist=3)
 
     # shuffle indexes
     inds = [i for i in range(len(data))]
+    np.random.seed(255)
     np.random.shuffle(inds)
 
     with open(data_file, 'w') as f:
