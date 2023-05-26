@@ -9,3 +9,4 @@ testdata/
 .vscode
 *.gv
 *.csv
+!results/*.csv

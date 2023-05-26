@@ -2,11 +2,10 @@ import matplotlib
 import matplotlib.pyplot as plt
 import scienceplots
 plt.style.use('ieee')
-matplotlib.use('pgf')
 
 if __name__ == '__main__':
     fig, ax = plt.subplots(figsize=[5,4])
-    lines = open('random_data_acc.csv', 'r').readlines()
+    lines = open('acc_dist_1.csv', 'r').readlines()
     gamma = list(map(float, lines[0].strip().split(',')[1:-1]))
     dls = list(map(float, lines[1].strip().split(',')[1:-1]))
     dlsm_1 = list(map(float, lines[2].strip().split(',')[1:-1]))

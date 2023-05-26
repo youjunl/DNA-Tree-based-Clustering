@@ -56,7 +56,10 @@ def screen_gc(data):
     return 1 # pass
 
 def screen_edit(index, trie, trie_th):
-    align = tree.search(trie, index, trie_th)
+    if trie_th == 0:
+        align = tree.quick_search(trie, index, trie_th, 0)
+    else:
+        align = tree.search(trie, index, trie_th)
     if align.label > 0:
         return 0
     else:
@@ -70,6 +73,7 @@ def gen_random_data(n_cluster, n_repeat, extra, pi, pd, ps, dist=0):
     clInds = []
     trie = tree.new_tree(16)
     random.seed(255)
+    np.random.seed(255)
     for i in range(n_cluster):
         seed = '{:032b}'.format(next(psnr))
         payload = ''
@@ -86,6 +90,7 @@ def gen_random_data(n_cluster, n_repeat, extra, pi, pd, ps, dist=0):
             for j in range(16):
                 index += num2dna[int(seed[j * 2:j * 2 + 2], 2)]
             invalid = not(screen_homopolymers(index, pattern) and screen_gc(index) and screen_edit(index, trie, dist))
+        tree.insert(trie, index, i+1)
         tx = index + payload
         rxs = channel([tx for _ in range(n_repeat)], pi, pd, ps)
         data.extend(rxs)
@@ -95,9 +100,9 @@ def gen_random_data(n_cluster, n_repeat, extra, pi, pd, ps, dist=0):
 
 if __name__ == '__main__':
 
-    data_file = 'testdata/randomReads_10000_dist_1.txt'
-    clust_file = 'testdata/randomTags_10000_dist_1.txt'
-    data, tags = gen_random_data(10000, 20, 10, 0.01, 0.01, 0.01, dist=1)
+    data_file = 'testdata/randomReads_10000_dist_0.txt'
+    clust_file = 'testdata/randomTags_10000_dist_0.txt'
+    data, tags = gen_random_data(10000, 20, 10, 0.01, 0.01, 0.01, dist=0)
 
     # shuffle indexes
     inds = [i for i in range(len(data))]

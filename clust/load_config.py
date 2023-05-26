@@ -14,7 +14,6 @@ config_dict={
     "sub_tree_threshold" : 1,
     "depth_limit" : 4,
     "h_index_nums" : 0,
-    "multi_stage": False,
     "use_index": False,
     "index_file": '',
     "frac": 0,
@@ -44,7 +43,7 @@ Options:
 -H tree threshold
 -S secondary tree threshold
 -F index file path
--T fraction of data enables merging
+-T fraction of reads that enables merging
 -A starting position
 '''
 def out_put_config():
