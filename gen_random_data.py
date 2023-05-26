@@ -95,9 +95,9 @@ def gen_random_data(n_cluster, n_repeat, extra, pi, pd, ps, dist=0):
 
 if __name__ == '__main__':
 
-    data_file = 'testdata/randomReads_10000_dist_3.txt'
-    clust_file = 'testdata/randomTags_10000_dist_3.txt'
-    data, tags = gen_random_data(10000, 20, 10, 0.01, 0.01, 0.01, dist=3)
+    data_file = 'testdata/randomReads_10000_dist_1.txt'
+    clust_file = 'testdata/randomTags_10000_dist_1.txt'
+    data, tags = gen_random_data(10000, 20, 10, 0.01, 0.01, 0.01, dist=1)
 
     # shuffle indexes
     inds = [i for i in range(len(data))]

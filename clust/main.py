@@ -4,7 +4,6 @@ import time
 import math
 from tqdm import tqdm
 from clust import load_config as lc
-from clust.multi_stage import *
 from clust import tree
 import mmap
 def mapcount(filename):
