@@ -71,34 +71,34 @@ class SingleProcess():
             self.clust_num += 1
             self.indexList.append((dna_tag, self.clust_num))
 
-    def cluster_with_index(self, dna_tag, dna_str):
-        dna_str = dna_str[self.h_index:self.h_index+self.read_len]
-        if len(dna_str) == self.read_len:
-            align_result = tree.quick_search(self.tree, dna_str, self.main_tree_th, self.depth_limit)
-            label = align_result.label
+    # def cluster_with_index(self, dna_tag, dna_str):
+        # dna_str = dna_str[self.h_index:self.h_index+self.read_len]
+        # if len(dna_str) == self.read_len:
+            # align_result = tree.quick_search(self.tree, dna_str, self.main_tree_th, self.depth_limit)
+            # label = align_result.label
 
-            if label > 0:
-                self.indexList.append((dna_tag, label))
-            else:
-                # Check umatched sequence in subtree
-                if dna_tag < self.merge_end:
-                    sub_dna_str = dna_str[:self.sub_tree_depth]
-                    sub_align_result = tree.search(self.sub_tree, sub_dna_str, self.sub_tree_th)
-                    if sub_align_result.label > 0:
-                        new_label = sub_align_result.label
+            # if label > 0:
+                # self.indexList.append((dna_tag, label))
+            # else:
+                # # Check umatched sequence in subtree
+                # if dna_tag < self.merge_end:
+                    # sub_dna_str = dna_str[:self.sub_tree_depth]
+                    # sub_align_result = tree.search(self.sub_tree, sub_dna_str, self.sub_tree_th)
+                    # if sub_align_result.label > 0:
+                        # new_label = sub_align_result.label
 
-                    else:
-                        self.clust_num += 1
-                        new_label = self.clust_num
-                        tree.insert(self.sub_tree, sub_dna_str, new_label)
-                else:
-                    self.clust_num += 1
-                    new_label = self.clust_num                    
-                #tree.insert(self.tree, dna_str, new_label)
-                self.indexList.append((dna_tag, new_label))
-        else:
-            self.clust_num += 1
-            self.indexList.append((dna_tag, self.clust_num))
+                    # else:
+                        # self.clust_num += 1
+                        # new_label = self.clust_num
+                        # tree.insert(self.sub_tree, sub_dna_str, new_label)
+                # else:
+                    # self.clust_num += 1
+                    # new_label = self.clust_num                    
+                # #tree.insert(self.tree, dna_str, new_label)
+                # self.indexList.append((dna_tag, new_label))
+        # else:
+            # self.clust_num += 1
+            # self.indexList.append((dna_tag, self.clust_num))
 
     def run(self):
         # Get number of reads
@@ -117,9 +117,9 @@ class SingleProcess():
                     line = m.readline()
         return self.indexList
             
-def chunks(arr, m):
-    n = int(math.ceil(len(arr) / float(m)))
-    return [arr[i:i + n] for i in range(0, len(arr), n)], [i for i in range(0, len(arr), n)]
+# def chunks(arr, m):
+    # n = int(math.ceil(len(arr) / float(m)))
+    # return [arr[i:i + n] for i in range(0, len(arr), n)], [i for i in range(0, len(arr), n)]
 
 def clust(data, config_dict):
     p = SingleProcess(data, config_dict)

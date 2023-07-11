@@ -1,6 +1,6 @@
 # DNA Tree based Clustering
 ## About this project
-This project contains code and benchmark results used in my Master thesis "Clustering for DNA Storage". The idea was developed from the tree based clustering algorithm [Clover](https://github.com/Guanjinqu/Clover). And the this project provides both Python and C++ implementation for our clustering method.
+This project contains code and benchmark results used in my Master thesis "Clustering for DNA Storage". The idea was developed from the tree based clustering algorithm Clover. And the this project provides both Python and C++ implementation for our clustering method.
 
 ## How to use
 A read file in TXT format is needed for clustering, and each line should be like:

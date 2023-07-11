@@ -1,6 +1,6 @@
 """Module for input parameters.
 
-This module is responsible for importing the input parameters to Clover.
+This module is responsible for importing the input parameters to Main program.
 
 """
 
