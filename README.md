@@ -1,13 +1,14 @@
 # DNA Tree based Clustering
-## About this project
+## Introduction
 This project contains code and benchmark results used in my Master thesis "Clustering for DNA Storage". The idea was developed from the tree based clustering algorithm [Clover](https://github.com/Guanjinqu/Clover). And this project provides both Python and C++ implementations for our clustering method.
 
-## How to use
+## Usage
+### Clustering
 A read file in TXT format is needed for clustering, and each line should be like:
 ```shell
-[Label] [Read]
+[Index] [Read]
 ```
-For example:
+An example of the read file:
 ```shell
 1 ATAAGGG
 2 AAAAGGG
@@ -27,11 +28,11 @@ For example:
 python -m clust.main -I testdata/toClust.txt -O output_file
 ```
 
-The output of the clustering result consists of original label and the label of cluster assigned, 
+The clustering result consists of original indexes and the label of cluster assigned, 
 ```shell
-[Label],[Label of cluster]
+[Index],[Label of cluster]
 ```
-for example:
+An example of clustering result:
 ```shell
 1,1
 2,1
@@ -40,11 +41,12 @@ for example:
 5,2
 ...
 ```
+### Benchmark
 For comparing the clustering result, a TXT file that indeicates accuracte clustering index is need:
 ```shell
-[Label],[Label of cluster]
+[Index],[Label of cluster]
 ```
-for example:
+An example of :
 ```shell
 1,1
 2,1
